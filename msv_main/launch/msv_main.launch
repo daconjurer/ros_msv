@@ -1,0 +1,10 @@
+<launch>
+	<!-- MSV_MAIN & NEW TERMINAL -->
+	<node name="msv_robot" pkg="msv_main" type="msv_robot" output="screen" launch-prefix="gnome-terminal --command"/>
+	
+	<!-- MSV_ARM & NEW TERMINAL -->
+	<node name= "msv_arm" pkg="msv_arm" type="msv_arm" output="screen" launch-prefix="gnome-terminal --command"/>
+	
+		<!-- MSV_DXL & NEW TERMINAL -->
+	<node name= "msv_dxl" pkg="msv_dxl" type="msv_dxl" output="screen" launch-prefix="gnome-terminal --command"/>
+</launch>
