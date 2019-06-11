@@ -1,0 +1,98 @@
+*** MODBUS for BPT and BPS ***
+
+** BPT (slave 0) **
+
+---MSV---
+moving (ON/OFF) -- coil
+
+--BLDC1--
+state_bl1 (ON/OFF) -- coil
+fr_bl1 (ON/OFF) -- coil
+sv_bl1 (0-255) -- holding register
+speed_bl1 (0-255) -- input register
+alm_bl1 (0-255) -- input register
+
+--BLDC2--
+state_bl2 (ON/OFF) -- coil
+fr_bl2 (ON/OFF) -- coil
+sv_bl2 (0-255) -- holding register
+speed_bl2 (0-255) -- input register
+alm_bl2 (0-255) -- input register
+
+--DC1--
+state_dc1 (ON/OFF) -- coil
+dir_dc1 (ON/OFF) -- coil
+p_dc1 (0-255) -- holding register
+speed_dc1 (0-255) -- input register
+
+--DC2--
+state_dc2 (ON/OFF) -- coil
+dir_dc2 (ON/OFF) -- coil
+p_dc2 (0-255) -- holding register
+speed_dc2 (0-255) -- input register
+
+** BPS (slave 1) **
+
+--POWER SENSORS--
+i1 (0-255) -- input register
+i2 (0-255) -- input register
+i3 (0-255) -- input register
+i4 (0-255) -- input register
+i5 (0-255) -- input register
+i6 (0-255) -- input register
+i7 (0-255) -- input register
+i8 (0-255) -- input register
+i9 (0-255) -- input register
+v1 (0-255) -- input register
+v2 (0-255) -- input register
+
+--LIGHTNING SYSTEM--
+led1 (ON/OFF) -- coil
+led2 (ON/OFF) -- coil
+led3 (ON/OFF) -- coil
+led4 (ON/OFF) -- coil
+
+--CO2--
+co2 (0-255) -- input register
+
+
+*** Modbus Function Formats ***
+--Holding registers--
+sv_bl1     40001
+sv_bl2     40002
+p_dc1     40003
+p_dc2     40004
+
+--Coils--
+fr_bl1      1
+fr_bl2      2
+dir_dc1     3
+dir_dc2     4
+moving      5
+
+led1        6
+led2        7
+led3        8
+led4        9
+
+--Input registers--
+i1          30001
+i2          30002
+i3          30003
+i4          30004
+i5          30005
+i6          30006
+i7          30007
+i8          30008
+i9          30009
+v1          300010
+v2          300011
+
+co2         300012
+
+speed_bl1   300013
+alm_bl1     300014
+speed_bl2   300015
+alm_bl2     300016
+speed_dc1   300017
+speed_dc2   300018
