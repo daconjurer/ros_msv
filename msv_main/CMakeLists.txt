@@ -4,30 +4,28 @@ project(msv_main)
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs)
 
+## Find System dependencies
+find_package(Boost REQUIRED COMPONENTS system)
+
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
-## Declare ROS messages and services
-#add_message_files(DIRECTORY msg FILES Num.msg)
-#add_service_files(DIRECTORY srv FILES AddTwoInts.srv)
-
-## Generate added messages and services
-#generate_messages(DEPENDENCIES std_msgs)
-
-## Declare a catkin package
-catkin_package(
-	INCLUDE_DIRS include
-  LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs
+include_directories(
+	include
+	${Boost_INCLUDE_DIRS}
+	/usr/include/lightmodbus
+	${catkin_INCLUDE_DIRS}
 )
 
-include_directories(
-  include
-  include/msv_main
-	/usr/include/lightmodbus
-	#/usr/include/lightmodbus/master
-	#/usr/include/lightmodbus/slave
+add_library(msv_porthandler src/port_handler.cpp)
+
+catkin_package(
+	INCLUDE_DIRS include
+	LIBRARIES msv_porthandler
+	CATKIN_DEPENDS roscpp rospy std_msgs
 )
 
 add_executable(msv_robot src/msv_main.cpp
-									src/port_handler.cpp)
+									src/main_publisher.cpp)
+									
 target_link_libraries(msv_robot ${catkin_LIBRARIES} lightmodbus)
+

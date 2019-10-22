@@ -16,19 +16,13 @@
 
 /* Author: Victor Esteban Sandoval-Luna */
 
-#include "../include/msv_main/port_handler.h"
+#include <msv_main/port_handler.h>
 
 using namespace msv;
 
-// Constructors
+// Constructor
 PortHandler::PortHandler () {
   port_name = (char*)"/dev/ttyUSB0";
-  socket_fd = -1;
-  setBaudRate(115200);
-}
-
-PortHandler::PortHandler (const char *portname) {
-  port_name = (char*)portname;
   socket_fd = -1;
   setBaudRate(115200);
 }
@@ -42,7 +36,6 @@ bool PortHandler::openPort () {
   }
 
   setInterfaceAttribs(socket_fd, baudrate_, 0);
-  setBlocking(socket_fd, 0);
   tcflush(socket_fd, TCIFLUSH);
 
   return true;
@@ -120,13 +113,36 @@ int PortHandler::readPort (uint8_t *packet, int length) {
   return read(socket_fd, packet, length);
 }
 
+int PortHandler::readPort (uint8_t *byte) {
+  return read(socket_fd, byte, 1);
+}
+
 int PortHandler::writePort (uint8_t *packet, int length) {
   return write(socket_fd, packet, length);
 }
 
+int PortHandler::writePort (uint8_t *byte) {
+  return write(socket_fd, byte, 1);
+}
+
 int PortHandler::setInterfaceAttribs (int fd, int baudrate, int parity) {
   struct termios tty;
-  memset(&tty, 0, sizeof tty);
+
+  memset(&tty,0,sizeof(tty));
+  tty.c_iflag = 0;
+  tty.c_oflag = 0;
+  tty.c_cflag = CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+  tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+  tty.c_cc[VMIN] = 1;
+  tty.c_cc[VTIME] = 5;
+
+  cfsetospeed(&tty,baudrate);            // 115200 baud
+  cfsetispeed(&tty,baudrate);            // 115200 baud
+
+  if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+    std::cout << "Error " << std::strerror(errno) << " from tcsetattr.\n";
+    return -1;
+  }
 
   if(!isatty(fd)) {
     std::cout << "Error " << std::strerror(errno) << " from isatty.\n";
@@ -138,50 +154,7 @@ int PortHandler::setInterfaceAttribs (int fd, int baudrate, int parity) {
     return -1;
   }
 
-  cfsetospeed(&tty, baudrate);
-  cfsetispeed(&tty, baudrate);
-
-  tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
-  // disable IGNBRK for mismatched speed tests; otherwise receive break
-  // as \000 chars
-  tty.c_iflag &= ~IGNBRK;         // disable break processing
-  tty.c_lflag = 0;                // no signaling chars, no echo,
-                                  // no canonical processing
-  tty.c_oflag = 0;                // no remapping, no delays
-  tty.c_cc[VMIN]  = 0;            // read doesn't block
-  tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
-
-  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
-
-  tty.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
-                                  // enable reading
-  tty.c_cflag &= ~(PARENB | PARODD);      // shut off parity
-  tty.c_cflag |= parity;
-  tty.c_cflag &= ~CSTOPB;
-  tty.c_cflag &= ~CRTSCTS;
-
-  if (tcsetattr(fd, TCSANOW, &tty) != 0) {
-    std::cout << "Error " << std::strerror(errno) << " from tcsetattr.\n";
-    return -1;
-  }
-
   return 0;
-}
-
-void PortHandler::setBlocking (int fd, int block) {
-  struct termios tty;
-  memset(&tty, 0, sizeof tty);
-
-  if (tcgetattr(fd, &tty) != 0) {
-    std::cout << "Error " << std::strerror(errno) << " from tggetattr.\n";
-    return;
-  }
-
-  tty.c_cc[VMIN]  = block ? 1 : 0;
-  tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
-
-  if (tcsetattr(fd, TCSANOW, &tty) != 0)
-    std::cout << "Error " << std::strerror(errno) << " setting termios attributes.\n";
 }
 
 int PortHandler::remapBaudRate (const int baudrate) {

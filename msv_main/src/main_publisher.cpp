@@ -33,96 +33,59 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-////////////////////////////////////////////////////////
-/// @file Direct port handler through USB-TTL converter
+/////////////////////////////////////////////////////////////////////////////////////////
+/// @file ROS msv_main node of the MSV-01 rescue robot for general control using the ROS
+/// Joy messages. The node publishes the teleoperation commands, as well as the control
+/// commands for the robotic arm and an orientation system for the RGBD sensor.
 /// @author Victor Esteban Sandoval-Luna
-////////////////////////////////////////////////////////
+///
+/// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
+/// Based on the Modbus protocol "lightmodbus" library (RTU) from Jacek Wieczorek,
+/// please see https://github.com/Jacajack/liblightmodbus.
+/////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MSV_PORTHANDLER_H_
-#define MSV_PORTHANDLER_H_
+/*
+* PENDINGS
+* arm
+* rgbd
+*/
 
-#include <iostream>
-#include <cerrno>
-#include <fcntl.h>
-#include <string.h>
-#include <cstring>
-#include <termios.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#include <msv_main/msv_main.h>
+#include <boost/asio.hpp>
 
-namespace msv
+int main (int argc, char **argv)
 {
+  //Initialize ROS
+  ros::init(argc, argv, "msv_main");
+  ros::NodeHandle priv_nh("~");
+  
+  int _verbosity;
+  
+  if (priv_nh.getParam("verbosity", _verbosity)) {
+    ROS_INFO("Param _verbosity: %d", _verbosity);
+  }
+  else ROS_ERROR("Failed to get param: _verbosity");
+  
+  boost::asio::io_service io;
+  
+  try {
+    //Create an object of class MsvMain that will do the job
+    MsvMain *robot;
+    MsvMain msv01(_verbosity);
+    robot = &msv01;
+    
+    ros::Rate loop_rate(10);
 
-class PortHandler
-{
-  private:
-    // attributes
-    char*   port_name;
-    int     socket_fd;
-    int     baudrate_;
-
-    double  packet_start_time_;
-    double  packet_timeout_;
-    double  tx_time_per_byte;
-
-    bool using_;
-
-    // methods
-    double getCurrentTime();
-    double getTimeSinceStart();
-
-    // Sets the attributes of the serial interface
-    int setInterfaceAttribs (int fd, int baudrate, int parity);
-
-    int remapBaudRate(const int baudrate);
-
-  public:
-    // Default Baudrate
-    const int DEFAULT_BAUDRATE = 115200;
-
-    // Constructor
-    PortHandler ();
-
-    virtual ~PortHandler() { }
-
-    // Opens the serial port
-    bool openPort();
-
-    // Closes the serial port
-    void closePort();
-
-    // Clears the port
-    void clearPort();
-
-    // Sets the name of the port
-    void setPortName(const char* port_name);
-
-    // Gets the name of the port
-    char *getPortName ();
-
-    // Sets the baudrate of the port
-    int setBaudRate(const int baudrate);
-
-    // Gets the baudrate of the port
-    int getBaudRate();
-
-    // Gets the number of bits available for reading from the port buffer
-    int getBytesAvailable();
-
-    // Reads buffer from port
-    int readPort(uint8_t *packet, int length);
-
-    // Reads byte from port
-    int readPort(uint8_t *byte);
-
-    // Writes buffer to port
-    int writePort(uint8_t *packet, int length);
-
-    // Writes byte to port
-    int writePort(uint8_t *byte);
-
-};
-
+    while (ros::ok()) {
+      // Node callbacks handling
+      ros::spinOnce();
+      loop_rate.sleep();
+    }
+    
+    return 0;
+  } catch (boost::system::system_error ex) {
+    ROS_ERROR("Error instantiating msv_main object. Error: %s", ex.what());
+    return -1;
+  }
 }
 
-#endif

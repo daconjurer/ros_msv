@@ -32,97 +32,65 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-
-////////////////////////////////////////////////////////
-/// @file Direct port handler through USB-TTL converter
+ 
+/////////////////////////////////////////////////////////////////////////////////////////
+/// @file ROS header for the teleop class of the MSV-01 rescue robot.
 /// @author Victor Esteban Sandoval-Luna
-////////////////////////////////////////////////////////
+///
+/// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
+/////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MSV_PORTHANDLER_H_
-#define MSV_PORTHANDLER_H_
+#ifndef MSV_TELEOP_H_
+#define MSV_TELEOP_H_
 
-#include <iostream>
-#include <cerrno>
-#include <fcntl.h>
-#include <string.h>
-#include <cstring>
-#include <termios.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#include <ros/ros.h>
+#include <msv_main/port_handler.h>
+#include <std_msgs/String.h>
+#include <stdio.h>
+#include <time.h>
+#include <inttypes.h>
+#include <std_msgs/MultiArrayDimension.h>
+#include <std_msgs/UInt8MultiArray.h>
+#include <msv_msgs/Actuators.h>
 
-namespace msv
-{
-
-class PortHandler
+class MsvTeleop
 {
   private:
-    // attributes
-    char*   port_name;
-    int     socket_fd;
-    int     baudrate_;
+    // Serial port handler
+    msv::PortHandler bpt;
 
-    double  packet_start_time_;
-    double  packet_timeout_;
-    double  tx_time_per_byte;
+    // Interface actuators nodes
+    ros::NodeHandle n_teleop;
+    ros::Subscriber sub_coils;
+    ros::Subscriber sub_regs;
+    ros::Publisher pub_actuators;
+    
+    // Arrays for decodifying
+    std::vector<uint8_t> regs_query = std::vector<uint8_t> (17);
+    std::vector<uint8_t> coils_query = std::vector<uint8_t> (10);
+    
+    // Messages to be published
+    msv_msgs::Actuators actuators_msg;
 
-    bool using_;
+    int verbosity;
+    
+    std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
 
-    // methods
-    double getCurrentTime();
-    double getTimeSinceStart();
+    void coilsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer);
+    void regsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer);
 
-    // Sets the attributes of the serial interface
-    int setInterfaceAttribs (int fd, int baudrate, int parity);
+    // Communication methods for the controller port
+    int sendreceivePacketBPT (int verbose, int ack_length, std::vector<uint8_t> buffer);
 
-    int remapBaudRate(const int baudrate);
+    // For debug purposes
+    int sendPacketBPT (int verbose, std::vector<uint8_t> buffer);
+
+    void delay(int ms);
 
   public:
-    // Default Baudrate
-    const int DEFAULT_BAUDRATE = 115200;
+    MsvTeleop (int verb);
+    virtual ~MsvTeleop () {}
 
-    // Constructor
-    PortHandler ();
-
-    virtual ~PortHandler() { }
-
-    // Opens the serial port
-    bool openPort();
-
-    // Closes the serial port
-    void closePort();
-
-    // Clears the port
-    void clearPort();
-
-    // Sets the name of the port
-    void setPortName(const char* port_name);
-
-    // Gets the name of the port
-    char *getPortName ();
-
-    // Sets the baudrate of the port
-    int setBaudRate(const int baudrate);
-
-    // Gets the baudrate of the port
-    int getBaudRate();
-
-    // Gets the number of bits available for reading from the port buffer
-    int getBytesAvailable();
-
-    // Reads buffer from port
-    int readPort(uint8_t *packet, int length);
-
-    // Reads byte from port
-    int readPort(uint8_t *byte);
-
-    // Writes buffer to port
-    int writePort(uint8_t *packet, int length);
-
-    // Writes byte to port
-    int writePort(uint8_t *byte);
-
-};
-
-}
+};// End of class MsvTeleop
 
 #endif

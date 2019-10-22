@@ -33,96 +33,48 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-////////////////////////////////////////////////////////
-/// @file Direct port handler through USB-TTL converter
+/////////////////////////////////////////////////////////////////////////////////////////
+/// @file ROS msv_teleop node of the MSV-01 rescue robot for remote control using
+/// commands from the ROS msv_main node. The commands are sent using the Modbus RTU
+/// protocol through serial port (connected to the USART of the BPT board).
+///
 /// @author Victor Esteban Sandoval-Luna
-////////////////////////////////////////////////////////
+///
+/// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
+/////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MSV_PORTHANDLER_H_
-#define MSV_PORTHANDLER_H_
+#include <msv_teleop/msv_teleop.h>
+#include <boost/asio.hpp>
 
-#include <iostream>
-#include <cerrno>
-#include <fcntl.h>
-#include <string.h>
-#include <cstring>
-#include <termios.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-
-namespace msv
+int main (int argc, char **argv)
 {
+  // Initialize ROS
+  ros::init(argc, argv, "msv_teleop");
+  ros::NodeHandle priv_nh("~");
+  
+  int _verbosity;
+  
+  if (priv_nh.getParam("verbosity", _verbosity)) {
+    ROS_INFO("Param _verbosity: %d", _verbosity);
+  }
+  else ROS_ERROR("Failed to get param: _verbosity");
 
-class PortHandler
-{
-  private:
-    // attributes
-    char*   port_name;
-    int     socket_fd;
-    int     baudrate_;
+  try {
+    //Create an object of class MsvTeleop that will do the job
+    MsvTeleop *teleop;
+    MsvTeleop msv01_teleop(_verbosity);
+    teleop = &msv01_teleop;
+    
+    ros::Rate loop_rate(10);
 
-    double  packet_start_time_;
-    double  packet_timeout_;
-    double  tx_time_per_byte;
-
-    bool using_;
-
-    // methods
-    double getCurrentTime();
-    double getTimeSinceStart();
-
-    // Sets the attributes of the serial interface
-    int setInterfaceAttribs (int fd, int baudrate, int parity);
-
-    int remapBaudRate(const int baudrate);
-
-  public:
-    // Default Baudrate
-    const int DEFAULT_BAUDRATE = 115200;
-
-    // Constructor
-    PortHandler ();
-
-    virtual ~PortHandler() { }
-
-    // Opens the serial port
-    bool openPort();
-
-    // Closes the serial port
-    void closePort();
-
-    // Clears the port
-    void clearPort();
-
-    // Sets the name of the port
-    void setPortName(const char* port_name);
-
-    // Gets the name of the port
-    char *getPortName ();
-
-    // Sets the baudrate of the port
-    int setBaudRate(const int baudrate);
-
-    // Gets the baudrate of the port
-    int getBaudRate();
-
-    // Gets the number of bits available for reading from the port buffer
-    int getBytesAvailable();
-
-    // Reads buffer from port
-    int readPort(uint8_t *packet, int length);
-
-    // Reads byte from port
-    int readPort(uint8_t *byte);
-
-    // Writes buffer to port
-    int writePort(uint8_t *packet, int length);
-
-    // Writes byte to port
-    int writePort(uint8_t *byte);
-
-};
-
+    while (ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+    }
+    
+    return 0;
+  } catch (boost::system::system_error ex) {
+    ROS_ERROR("Error instantiating msv_teleop object. Error: %s", ex.what());
+    return -1;
+  }
 }
-
-#endif

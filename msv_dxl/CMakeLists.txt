@@ -3,28 +3,26 @@ project(msv_dxl)
 
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs)
+find_package(msv_main REQUIRED)
+## Find System dependencies
+find_package(Boost REQUIRED COMPONENTS system)
 
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
-## Declare ROS messages and services
-#add_message_files(DIRECTORY msg FILES Num.msg)
-#add_service_files(DIRECTORY srv FILES AddTwoInts.srv)
-
-## Generate added messages and services
-#generate_messages(DEPENDENCIES std_msgs)
-
-## Declare a catkin package
-catkin_package(
-	INCLUDE_DIRS include
-  LIBRARIES
-  CATKIN_DEPENDS roscpp rospy std_msgs
+include_directories(
+	include
+	${Boost_INCLUDE_DIRS}
+	${catkin_INCLUDE_DIRS}
+	${msv_main_INCLUDE_DIRS}
 )
 
-include_directories(
-  include
-  include/msv_dxl
+catkin_package(
+	INCLUDE_DIRS include
+	LIBRARIES msv_porthandler
+	CATKIN_DEPENDS roscpp rospy std_msgs
 )
 
 add_executable(msv_dxl src/msv_dxl.cpp
-									src/dxl_handler.cpp)
-target_link_libraries(msv_dxl ${catkin_LIBRARIES})
+									src/msv_dxl_node.cpp)
+target_link_libraries(msv_dxl ${catkin_LIBRARIES} msv_porthandler)
+
