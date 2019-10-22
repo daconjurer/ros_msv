@@ -1,19 +1,25 @@
-<package>
+<?xml version="1.0"?>
+<package format="2">
   <name>ros_msv</name>
   <version>0.0.0</version>
   <description>
     The ros_msv Metapackage for the MSV-01 robot.
   </description>
 
-  <maintainer email="stb.4421@gmail.com">Victor Sandoval-Luna</maintainer>
-  <author email="stb.4421@gmail.com">Victor Sandoval-Luna</author>
+  <maintainer email="stb.4421@gmail.com">Victor Esteban Sandoval-Luna</maintainer>
+  <author email="stb.4421@gmail.com">Victor Esteban Sandoval-Luna</author>
 
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   
-  <run_depend>msv_main</run_depend>
-  <run_depend>msv_arm</run_depend>
+  <exec_depend>msv_main</exec_depend>
+  <exec_depend>msv_msgs</exec_depend>
+  <exec_depend>msv_bringup</exec_depend>
+  <exec_depend>msv_teleop</exec_depend>
+  <exec_depend>msv_electric</exec_depend>
+  <exec_depend>msv_imu</exec_depend>
+  <exec_depend>msv_dxl</exec_depend>
 
   <export>
    <metapackage/>

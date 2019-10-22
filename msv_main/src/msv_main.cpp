@@ -1,206 +1,121 @@
-/*******************************************************************************
-* Copyright 2019 Robótica de la Mixteca
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*******************************************************************************/
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2019, Robótica de la Mixteca
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Universidad Tecnológica de la Mixteca nor
+ *     the names of its contributors may be used to endorse or promote
+ *     products derived from this software without specific prior
+ *     written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
 
 /////////////////////////////////////////////////////////////////////////////////////////
-/// @file ROS main node of the MSV-01 rescue robot performing a teleoperated motion
-/// controller using the ROS Joy messages as well as sensors reading tasks through
-/// keyboard. Based on the Modbus protocol "lightmodbus" library (RTU) for
-/// microcontoller instruction.
+/// @file ROS main class of the MSV-01 rescue robot for general control using the ROS
+/// Joy messages. The node publishes the teleoperation commands, as well as the control
+/// commands for the robotic arm and an orientation system for the RGBD sensor.
 /// @author Victor Esteban Sandoval-Luna
 ///
 /// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
+/// Based on the Modbus protocol "lightmodbus" library (RTU) from Jacek Wieczorek,
+/// please see https://github.com/Jacajack/liblightmodbus.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "ros/ros.h"
-#include "port_handler.h"
-#include <std_msgs/String.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/UInt8.h>
-#include <sensor_msgs/Joy.h>
-#include <geometry_msgs/Twist.h>
-#include <stdio.h>
-#include <time.h>
-#include <inttypes.h>
+/* PENDINGS */
+// Manage verbosity
+// Publish moving state
 
-#include <lightmodbus/lightmodbus.h>
-#include <lightmodbus/master.h>
-#include <lightmodbus/slave.h>
+#include <msv_main/msv_main.h>
 
-using namespace msv;
-
-class msv_main
+MsvMain::MsvMain (int verb) 
 {
-  private:
-    // lightmodbus Master configuration struct
-	  ModbusMaster master;
+  ROS_INFO("SETTING ROBOT UP...");
 
-    // Modbus registers and coils
-    std::vector<uint16_t> mhregs = std::vector<uint16_t> (4);
-    std::vector<uint16_t> miregs = std::vector<uint16_t> (6);
-    std::vector<uint16_t> siregs = std::vector<uint16_t> (12);
-    std::vector<uint8_t> mcoils = std::vector<uint8_t> (1);   // 5 coils
-    std::vector<uint8_t> lcoils = std::vector<uint8_t> (1);   // 4 coils
+  // Joy controller topic
+  sub_joy = n_main.subscribe("joy", 1, &MsvMain::joyCallback, this);
 
-    // Modbus slave response frame
-    std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
+  // Robot's state topic (published when the slave confirms wether the robot is moving or not)
+  pub_state = n_main.advertise<std_msgs::String>("msv/state", 1);
+  // Mode topic (published every time a new mode is selected [SELECT button])
+  pub_mode = n_main.advertise<std_msgs::String>("msv/mode", 1);
+  // Power topic (published every time the max power changes [START button])
+  pub_power = n_main.advertise<std_msgs::UInt8>("msv/power", 1);
+  // Twist topic (debug purposes, published every time the cmd_vel of the robot changes)
+  pub_vel = n_main.advertise<geometry_msgs::Twist>("msv/cmd_vel", 10);
+  // Modbus traction system coils topic (published every time a new Joy command arrives)
+  pub_coils = n_main.advertise<std_msgs::UInt8MultiArray>("msv/ts_coils", 10);
+  // Modbus traction system holding regs topic (published every time a new Joy command arrives)
+  pub_regs = n_main.advertise<std_msgs::UInt8MultiArray>("msv/ts_regs", 10);
+  
+  // liblightmodbus Master struct init
+  mec = modbusMasterInit(&master);
+  if (mec != MODBUS_OK)
+    ROS_INFO("MODBUS MASTER COULD NOT BE INITIALIZED");
+  else ROS_INFO("MODBUS MASTER INITIALIZED");
 
-    // For Master Error checking
-    //ModbusError merr;
-	  // For Master Exit code
-    uint8_t mec;
+  // Verbosity and Max traction power attributes
+  verbosity = verb;
+  power = 90;
 
-    // Serial ports
-    PortHandler bpt, bps;
-    // Send flag (valid button pressed)
-    int send;
-    // ACK check
-    int ack;
+  sel = 0;
+  l = 0;
+  a = 0;
+  f = 0;
+  s = 0;
+  
+  send = 0;
 
-    // MSV-01 robot main nodes
-    ros::NodeHandle n_main;
-    ros::Publisher pub_state;
-    ros::Publisher pub_mode;
-    ros::Publisher pub_power;
-    ros::Publisher pub_vel;
+  ROS_INFO("MAX POWER: 100%%. MIN POWER: 35%%.");
+  // Joystick attributes
+  linear = 1;
+  angular = 2;
+  up = 5;
+  down = 7;
 
-    // Joy node subscriber
-    ros::Subscriber sub_joy;
+  mode = 0; // Robot mode
+  turn_mode = 0;  // Turn around z axis
+  
+  // Multiarrays set up
+  bpt_hregs.layout.dim.push_back(std_msgs::MultiArrayDimension());
+  bpt_hregs.layout.dim[0].size = 17;
+  bpt_hregs.layout.dim[0].stride = 1;
+  bpt_hregs.layout.dim[0].label = "hregs";
+  
+  bpt_coils.layout.dim.push_back(std_msgs::MultiArrayDimension());
+  bpt_coils.layout.dim[0].size = 10;
+  bpt_coils.layout.dim[0].stride = 1;
+  bpt_coils.layout.dim[0].label = "coils";
+  
+  ROS_INFO("VERBOSITY: %d", verbosity);
 
-    // Interface actuators nodes
-    ros::Publisher pub_actuators;
-    ros::Publisher pub_leds;
+  ROS_INFO("SET UP DONE");
+}
 
-    // Interface sensors nodes
-    ros::Publisher pub_co2;
-    ros::Publisher pub_sensors;
-
-    // Verbosity and traction power attributes
-    int verbosity;
-    int power;
-
-    // Buttons memories
-    int l, a, f, s;
-    int sel;
-
-    void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
-    
-    void delay (int ms);
-
-    int setVerb (int verb);
-
-    // Communication methods for the controller and sensors ports, respectively.
-    int sendreceivePacketBPT (int verbose, int ack_length);
-    int sendreceivePacketBPS (int verbose, int ack_length);
-
-    // For debug purposes
-    int sendPacketBPT (int verbose);
-    int sendPacketBPS (int verbose);
-
-    void printACK ();
-
-    // For locomotion control
-    int linear, angular;
-    int up, down;
-
-    // For joystick use (0 for robot, 1 for arm)
-    int mode;
-    int turn_mode;  // For turn mode (0 for turning around z axis, 0 for smooth)
-
-  public:
-    // Sensing routine (continuous)
-    void sensingBPS ();
-
-    //msv_main (int verb) : bpt("/dev/ttyUSB1"), bps("/dev/ttyACM0") {
-    msv_main (int verb) : bpt("/dev/ttyUSB1"), bps("/dev/ttyUSB2") {
-      ROS_INFO("SETTING ROBOT UP...");
-
-      // Port handler
-      bpt.setBaudRate(460800);
-      if (bpt.openPort())
-        ROS_INFO("CONTROLLER SERIAL PORT OPEN");
-      else ROS_INFO("CONTROLLER DEBUG MODE");
-
-      bps.setBaudRate(460800);
-      if (bps.openPort())
-        ROS_INFO("SENSORS SERIAL PORT OPEN");
-      else ROS_INFO("SENSORS DEBUG MODE");
-
-      // liblightmodbus Master struct init
-      mec = modbusMasterInit(&master);
-      if (mec != MODBUS_OK)
-        ROS_INFO("MODBUS MASTER COULD NOT BE INITIALIZED");
-      else ROS_INFO("MODBUS MASTER INITIALIZED");
-
-      // Joy controller topic
-      sub_joy = n_main.subscribe("joy", 1, &msv_main::joyCallback, this);
-
-      // Robot's state topic (published when the slave confirms wether the robot is moving or not)
-      pub_state = n_main.advertise<std_msgs::String>("msv/state", 1);
-      // Mode topic (published every time a new mode is selected [SELECT button])
-      pub_mode = n_main.advertise<std_msgs::String>("msv/mode", 1);
-      // Power topic (published every time the max power changes [START button])
-      pub_power = n_main.advertise<std_msgs::UInt8>("msv/power", 1);
-      // Twist topic (debug purposes, published every time the cmd_vel of the robot changes)
-      pub_vel = n_main.advertise<geometry_msgs::Twist>("msv/cmd_vel", 10);
-
-      // Actuators topic (published when the slave reports/confirms the state of the actuators)
-      pub_actuators = n_main.advertise<std_msgs::UInt8>("msv/actuators", 1);
-
-      // LEDs topic (published every time the slave reports/confirms the state of the LEDs)
-      pub_leds = n_main.advertise<std_msgs::UInt8>("msv/leds", 1);
-
-      // Power sensors topic (published every time the slave reports the state of the sensors)
-      pub_sensors = n_main.advertise<std_msgs::UInt8>("msv/sensors", 1);
-
-      // CO2 sensor topic (published every time the slave reports the state of the sensor)
-      pub_co2 = n_main.advertise<std_msgs::UInt8>("msv/co2", 1);
-
-      // Verbosity and Max traction power attributes
-      verbosity = setVerb(verb);
-      power = 90;
-
-      sel = 0;
-      l = 0;
-      a = 0;
-      f = 0;
-      s = 0;
-
-      send = 0;
-      ack = 0;
-
-      ROS_INFO("MAX POWER: 100%%. MIN POWER: 35%%.");
-      // Joystick attributes
-      linear = 1;
-      angular = 2;
-      up = 5;
-      down = 7;
-
-      mode = 0; // Robot mode
-      turn_mode = 0;  // Turn around z axis
-      
-      // BPT and BPS init routines
-      initBPT();
-    	initPBS();
-
-      ROS_INFO("SET UP DONE");
-    }
-
-};// End of class msv_main
-
-void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy) 
+// Joy callback method
+void MsvMain::joyCallback (const sensor_msgs::Joy::ConstPtr& joy) 
 {
   int select, start;
   int send = 0;
@@ -266,17 +181,15 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
       case 2:
         if (power == 255) {
           power = 90;
-          p.data = 255;
-          pub_power.publish(p);
           ROS_INFO("POWER: 34%%");
         } else {
           int tpwr;
           power += 55;
           tpwr = int(power*100.0/255.0);
-          p.data = power;
-          pub_power.publish(p);
           ROS_INFO("POWER: %d%%", tpwr);
         }
+        p.data = power;
+        pub_power.publish(p);
         break;
       default:
         break;
@@ -289,39 +202,39 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
     geometry_msgs::Twist twist;
     int angular_z  = -power*joy->axes[angular];
     int linear_x = power*joy->axes[linear];
-
-    mhregs[2] = 0x0000;
-    mhregs[3] = 0x0000;
+    
+    hregs[2] = 0x0000;
+    hregs[3] = 0x0000;
 
     // Forward/reverse
     if (linear_x > 0) {
       send = 1;
       // SV
-      mhregs[0] = (uint16_t)linear_x;
-      mhregs[1] = (uint16_t)linear_x;
+      hregs[0] = (uint16_t)linear_x;
+      hregs[1] = (uint16_t)linear_x;
 
       // F/R
-      mcoils[0] = 0x11;    // 0001 0001
+      coils[0] = 0x11;    // 0001 0001
       ROS_INFO("Moving: forward");
     }
     else if (linear_x < 0) {
       send = 1;
       // SV
-      mhregs[0] = (uint16_t)(-1*linear_x);
-      mhregs[1] = (uint16_t)(-1*linear_x);
+      hregs[0] = (uint16_t)(-1*linear_x);
+      hregs[1] = (uint16_t)(-1*linear_x);
 
       // F/R
-      mcoils[0] = 0x12;    // 0001 0010
+      coils[0] = 0x12;    // 0001 0010
       ROS_INFO("Moving: reverse");
     }
     else if (linear_x == 0 && l != 0) {
       send = 1;
       // SV
-      mhregs[0] = 0x0000;
-      mhregs[1] = 0x0000;
+      hregs[0] = 0x0000;
+      hregs[1] = 0x0000;
 
       // Stop
-      mcoils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
+      coils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
       ROS_INFO("STOP");
     }
 
@@ -331,64 +244,63 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
       if (angular_z > 0 && turn_mode == 0) {
         send = 1;
         // SV
-        mhregs[0] = (uint16_t)angular_z;
-        mhregs[1] = (uint16_t)angular_z;
+        hregs[0] = (uint16_t)angular_z;
+        hregs[1] = (uint16_t)angular_z;
 
         // F/R
-        mcoils[0] = 0x13;    // 0001 0011
+        coils[0] = 0x13;    // 0001 0011
         ROS_INFO("Z axis turning: right");
       }
       else if (angular_z < 0 && turn_mode == 0) {
         send = 1;
         // SV
-        mhregs[0] = (uint16_t)(-1*angular_z);
-        mhregs[1] = (uint16_t)(-1*angular_z);
+        hregs[0] = (uint16_t)(-1*angular_z);
+        hregs[1] = (uint16_t)(-1*angular_z);
 
         // F/R
-        mcoils[0] = 0x10;    // 0001 0000
-
+        coils[0] = 0x10;    // 0001 0000
         ROS_INFO("Z axis turning: left");
       }
       else if ((angular_z == 0 && turn_mode == 0) && a != 0) {
         send = 1;
-        mcoils[0] = 0x00;
+        coils[0] = 0x00;
         // SV
-        mhregs[0] = 0x0000;
-        mhregs[1] = 0x0000;
+        hregs[0] = 0x0000;
+        hregs[1] = 0x0000;
 
         // Stop
-        mcoils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
+        coils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
         ROS_INFO("STOP");
       }
       // Smooth turn (mode 1)
       else if (angular_z > 0 && turn_mode == 1) {
         send = 1;
         // SV
-        mhregs[0] = (uint16_t)angular_z;
-        mhregs[1] = (uint16_t)(angular_z/2);
+        hregs[0] = (uint16_t)angular_z;
+        hregs[1] = (uint16_t)(angular_z/2);
 
         // F/R
-        mcoils[0] = 0x11;    // 0001 0001
+        coils[0] = 0x11;    // 0001 0001
         ROS_INFO("Smooth turning: right");
       }
       else if (angular_z < 0 && turn_mode == 1) {
         send = 1;
         // SV
-        mhregs[0] = (uint16_t)(-1*angular_z);
-        mhregs[1] = (uint16_t)((-1/2)*angular_z);
+        hregs[1] = (uint16_t)(-1*angular_z);
+        hregs[0] = (uint16_t)(-angular_z/2);
 
         // F/R
-        mcoils[0] = 0x12;    // 0001 0010
+        coils[0] = 0x12;    // 0001 0010
         ROS_INFO("Smooth turning: left");
       }
       else if ((angular_z == 0 && turn_mode == 1) && a != 0) {
         send = 1;
         // SV
-        mhregs[0] = 0x0000;
-        mhregs[1] = 0x0000;
+        hregs[0] = 0x0000;
+        hregs[1] = 0x0000;
 
         // Stop
-        mcoils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
+        coils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
         ROS_INFO("STOP");
       }
     }
@@ -398,11 +310,11 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 
       send = 1;
       // Flippers DOWN
-      mhregs[2] = 0x00FF;
-      mhregs[3] = 0x00FF;
+      hregs[2] = 0x00FF;
+      hregs[3] = 0x00FF;
 
       // Direction
-      mcoils[0] = 0x14;    // 0001 0100
+      coils[0] = 0x14;    // 0001 0100
       ROS_INFO("Moving flippers: down");
 
       // Debug
@@ -413,11 +325,11 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 
       send = 1;
       // Flippers UP
-      mhregs[2] = 0x00FF;
-      mhregs[3] = 0x00FF;
+      hregs[2] = 0x00FF;
+      hregs[3] = 0x00FF;
 
       // Direction
-      mcoils[0] = 0x18;    // 0001 1000
+      coils[0] = 0x18;    // 0001 1000
       ROS_INFO("Moving flippers: up");
 
       // Debug
@@ -427,18 +339,17 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
       f = 0;
       send = 1;
       // Flippers OFF
-      mhregs[2] = 0x0000;
-      mhregs[3] = 0x0000;
+      hregs[2] = 0x0000;
+      hregs[3] = 0x0000;
 
       // Stop
-      mcoils[0] = 0x00;    // 0000 0000 (could be 0x0C as well)
+      coils[0] = 0x00;    // 0000 0000 (could be 0x0C as well)
       ROS_INFO("Flippers stopped");
     }
 
     l = linear_x;
     a = angular_z;
-
-    // Serial communication routine
+    
     if (send == 1) {
       // Debug
       twist.angular.z = angular_z;
@@ -447,250 +358,68 @@ void msv_main::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 
       if (verbosity == 0) {
         // Holding registers frame
-        modbusBuildRequest16(&master,0,0,4,mhregs.data());
-        sendPacketBPT(0);
-
-        //ack = sendreceivePacketBPT(0,8);
-
-        //if (ack != 8){}
-          //ROS_INFO("Corrupt Modbus response (BPT).");
+        modbusBuildRequest16(&master,0,0,4,hregs.data());
+        bpt_hregs.data.clear();
+        for (int i = 0; i < master.request.length; i++) {
+          bpt_hregs.data.push_back(master.request.frame[i]);
+        }
+        pub_regs.publish(bpt_hregs);
 
         // Coils frame
-        modbusBuildRequest15(&master,0,0,5,mcoils.data());
-        sendPacketBPT(0);
-
-        //ack = sendreceivePacketBPT(0,8);
-
-        //if (ack != 8){}
-          //ROS_INFO("Corrupt Modbus response (BPT).");
+        modbusBuildRequest15(&master,0,0,5,coils.data());
+        bpt_coils.data.clear();
+        for (int i = 0; i < master.request.length; i++) {
+          bpt_coils.data.push_back(master.request.frame[i]);
+        }
+        pub_coils.publish(bpt_coils);
 
       } else {
         // Holding registers frame
-        modbusBuildRequest16(&master,0,0,4,mhregs.data());
-        sendPacketBPT(1);
-
-        //ack = sendreceivePacketBPT(1,8);
-
-        //if (ack != 8){}
-          //ROS_INFO("Corrupt Modbus response (BPT).");
-        //else printACK();
-        
-        delay(7);
+        modbusBuildRequest16(&master,0,0,4,hregs.data());
+        bpt_hregs.data.clear();
+        for (int i = 0; i < master.request.length; i++) {
+          bpt_hregs.data.push_back(master.request.frame[i]);
+        }
+        pub_regs.publish(bpt_hregs);
+        //printQuery();
+        printRegs();
 
         // Coils frame
-        modbusBuildRequest15(&master,0,0,5,mcoils.data());
-        sendPacketBPT(1);
-
-        //ack = sendreceivePacketBPT(1,8);
-
-        //if (ack != 8){}
-          //ROS_INFO("Corrupt Modbus response (BPT).");
-        //else printACK();
+        modbusBuildRequest15(&master,0,0,5,coils.data());
+        bpt_coils.data.clear();
+        for (int i = 0; i < master.request.length; i++) {
+          bpt_coils.data.push_back(master.request.frame[i]);
+        }
+        pub_coils.publish(bpt_coils);
+        //printQuery();
+        printCoils();
       }
     }
   }
   s = select;
 }
 
-void msv_main::sensingBPS () 
+void MsvMain::printQuery () 
 {
-  if (verbosity == 1) {
-    ROS_INFO("MSV_MAIN SENSING NOW.");
-
-    // Sensors input registers frame
-    modbusBuildRequest04(&master,1,0,12);
-    sendPacketBPS(1);
-
-    // Actuators input registers frame
-    modbusBuildRequest04(&master,1,12,6);
-    sendPacketBPS(1);
-
-    // Servos input registers frame
-    modbusBuildRequest04(&master,1,99,3);
-    sendPacketBPS(1);
-
-    // Holding registers frame
-    modbusBuildRequest03(&master,1,0,5);
-    sendPacketBPS(1);
-
-    // Motors & LEDs coils frame
-    modbusBuildRequest01(&master,1,0,9);
-    sendPacketBPS(1);
-
-    // Servos coils frame
-    modbusBuildRequest01(&master,1,99,3);
-    sendPacketBPS(1);
-
-  } else {
-    // Sensors input registers frame
-    modbusBuildRequest04(&master,1,0,12);
-    sendPacketBPS(0);
-
-    // Actuators input registers frame
-    modbusBuildRequest04(&master,1,12,6);
-    sendPacketBPS(0);
-
-    // Servos input registers frame
-    modbusBuildRequest04(&master,1,99,3);
-    sendPacketBPS(0);
-
-    // Holding registers frame
-    modbusBuildRequest03(&master,1,0,5);
-    sendPacketBPS(0);
-
-    // Motors & LEDs coils frame
-    modbusBuildRequest01(&master,1,0,9);
-    sendPacketBPS(0);
-
-    // Servos coils frame
-    modbusBuildRequest01(&master,1,99,3);
-    sendPacketBPS(0);
-  }
-}
-
-void msv_main::delay (int ms) 
-{
-    clock_t start_time = clock(); 
-    while (clock() < start_time + ms);
-}
-
-int msv_main::setVerb (int verb) 
-{
-  if (verb != 0 && verb != 1) {
-    ROS_INFO("VERBOSITY: OFF");
-    return 0;
-  }
-
-  ROS_INFO("VERBOSITY: ON");
-  return verb;
-}
-
-int msv_main::sendreceivePacketBPT (int verbose, int ack_length) 
-{
-  uint8_t rl = master.request.length;
-  ack_modbus.resize(ack_length);
-  int k;
-
-  bpt.clearPort();
-  k = bpt.writePort(master.request.frame, rl);
-  usleep ((rl + ack_length) * 10);
-
-  int n = bpt.readPort(ack_modbus.data(), ack_length);
-
-  if (k != rl) {
-    return -1;
-  }
-
-  if (verbose) {
-    for (int j = 0; j < rl; j++) {
-      printf("%X ", master.request.frame[j]);
-    }
-    printf("\n");
-  }
-
-  return n;
-}
-
-int msv_main::sendreceivePacketBPS (int verbose, int ack_length) 
-{
-  uint8_t rl = master.request.length;
-  ack_modbus.resize(ack_length);
-  int k;
-
-  bps.clearPort();
-  k = bps.writePort(master.request.frame, rl);
-  usleep ((rl + ack_length) * 10);
-
-  int n = bps.readPort(ack_modbus.data(), ack_length);
-
-  if (k != rl) {
-    return -1;
-  }
-
-  if (verbose) {
-    for (int j = 0; j < rl; j++) {
-      printf("%X ", master.request.frame[j]);
-    }
-    printf("\n");
-    std::cout << "Slave response:";
-    for (int j = 0; j < ack_length; j++) {
-      printf("%X ", ack_modbus[j]);
-    }
-    printf("\n");
-  }
-
-  return n;
-}
-
-int msv_main::sendPacketBPT (int verbose) 
-{
-  uint8_t rl = master.request.length;
-  int k;
-
-  bpt.clearPort();
-  k = bpt.writePort(master.request.frame, rl);
-  usleep (rl * 10);
-
-  if (verbose) {
-    for (int j = 0; j < rl; j++) {
-      printf("%X ", master.request.frame[j]);
-    }
-    printf("\n");
-  }
-
-  return k;
-}
-
-int msv_main::sendPacketBPS (int verbose) 
-{
-  uint8_t rl = master.request.length;
-  int k;
-
-  bps.clearPort();
-  k = bps.writePort(master.request.frame, rl);
-  usleep (rl * 10);
-
-  if (verbose) {
-    for (int j = 0; j < rl; j++) {
-      printf("%X ",master.request.frame[j]);
-    }
-    printf("\n");
-  }
-
-  return k;
-}
-
-void msv_main::printACK () {
-  std::cout << "Slave response: ";
-  for (int j = 0; j < ack_modbus.size(); j++) {
-    printf("%X ", ack_modbus[j]);
+  for (int i = 0; i < master.request.length; i++) {
+    printf("%X ", master.request.frame[i]);
   }
   printf("\n");
 }
 
-int main (int argc, char **argv)
+void MsvMain::printRegs () 
 {
-  //Initiate ROS
-  ros::init(argc, argv, "msv_main");
-
-  //Create an object of class msv_main that will do the job
-  msv_main *robot;
-  msv_main msv01(1);
-  robot = &msv01;
-  ROS_INFO("ROBOT MSV-01 IS READY");
-
-  ros::Rate loop_rate(10);
-
-  while (ros::ok()) {
-    // Publishing routine
-    // robot->sensingBPS();
-
-    // Node callbacks handling
-    ros::spinOnce();
-    loop_rate.sleep();
+  for (int i = 0; i < hregs.size(); i++) {
+    printf("%X ", hregs[i]);
   }
-
-  // ros::spin();
-
-  return 0;
+  printf("\n");
 }
+
+void MsvMain::printCoils () 
+{
+  for (int i = 0; i < coils.size(); i++) {
+    printf("%X ", coils[i]);
+  }
+  printf("\n");
+}
+

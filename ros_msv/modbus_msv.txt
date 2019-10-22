@@ -42,7 +42,6 @@ i5 (0-255) -- input register
 i6 (0-255) -- input register
 i7 (0-255) -- input register
 i8 (0-255) -- input register
-i9 (0-255) -- input register
 v1 (0-255) -- input register
 v2 (0-255) -- input register
 
@@ -68,10 +67,10 @@ theta3 (0-255) -- input register
 
 *** Modbus Function Formats ***
 --Holding registers--
-sv_bl1     40001
-sv_bl2     40002
-p_dc1     40003
-p_dc2     40004
+sv_bl1      40001
+sv_bl2      40002
+p_dc1       40003
+p_dc2       40004
 
 --Coils--
 fr_bl1      1
@@ -85,9 +84,9 @@ led2        7
 led3        8
 led4        9
 
-torque1     100
-torque2     101
-torque3     102
+torque1     80
+torque2     81
+torque3     82
 
 --Input registers--
 i1          30001
@@ -98,19 +97,18 @@ i5          30005
 i6          30006
 i7          30007
 i8          30008
-i9          30009
-v1          30010
-v2          30011
+v1          30009
+v2          30010
 
-co2         30012
+co2         30011
 
-speed_bl1   30013
-alm_bl1     30014
-speed_bl2   30015
-alm_bl2     30016
-speed_dc1   30017
-speed_dc2   30018
+speed_bl1   30050
+alm_bl1     30051
+speed_bl2   30052
+alm_bl2     30053
+speed_dc1   30054
+speed_dc2   30055
 
-theta1      30100
-theta2      30101
-theta3      30102
+theta1      30080
+theta2      30081
+theta3      30082

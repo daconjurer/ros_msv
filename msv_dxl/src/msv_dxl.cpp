@@ -1,93 +1,97 @@
-/*******************************************************************************
-* Copyright 2019 Robótica de la Mixteca
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*******************************************************************************/
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2019, Robótica de la Mixteca
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of Universidad Tecnológica de la Mixteca nor
+ *     the names of its contributors may be used to endorse or promote
+ *     products derived from this software without specific prior
+ *     written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
 
 /////////////////////////////////////////////////////////////////////////////////////////
-/// @file ROS Node of the MSV-01 rescue robot RGBD orientation system using the ROBOTIS
-/// Dynamixel Servos powered by the Dynamixel SDK.
+/// @file ROS msv_dxl class of the MSV-01 rescue robot for ROBOTIS OpenCM 9.04
+/// instruction through serial port. This code assumes the OpenCM 9,04 board runs the
+/// DynamixelSDK 3.5.4 or superior for the AX-12A servos instruction.
+///
+/// DYNAMIXEL SDK running on the OpenCM 9.04 C board.
+/// Please see https://github.com/ROBOTIS-GIT/DynamixelSDK
+///
+/// For further information on the OpenCM 9,04 controller bard,
+/// please see http://emanual.robotis.com/docs/en/parts/controller/opencm904/
+///
 /// @author Victor Esteban Sandoval-Luna
+///
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ros/ros.h>
-#include "dxl_handler.h"
-#include <unistd.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/UInt16.h>
-#include <std_msgs/String.h>
-#include <sensor_msgs/Joy.h>
-#include <geometry_msgs/Twist.h>
+#include <msv_dxl/msv_dxl.h>
 
-using namespace msv;
-
-class msv_dxl
+MsvDxl::MsvDxl () 
 {
-  private:
-    // Serial port
-    DxlHandler dxl;
+  ROS_INFO("SETTING DYNAMIXELS UP...");
 
-    ros::NodeHandle n_dxl;
-    ros::Publisher pub_angles;
-    ros::Publisher pub_base;
+  // DXL port handler
+  dxl_port.setPortName("/dev/ttyACM0");
+  if (dxl_port.openPort()) {
+    ROS_INFO("CONTROLLER OCMD SERIAL PORT OPEN. INITIALIZING OCMD NOW...");
+  }
+  else ROS_INFO("SENSORS DEBUG MODE");
 
-    // For the RGBD orientation system control
-    ros::Subscriber sub_mode;
-    ros::Subscriber sub_joy;
+  ocmd_angles.layout.dim.push_back(std_msgs::MultiArrayDimension());
+  ocmd_angles.layout.dim[0].size = 3;
+  ocmd_angles.layout.dim[0].stride = 1;
+  ocmd_angles.layout.dim[0].label = "rgbd_angles";
 
-    int on;
-    int x, y, up, down;
+  // Servos position topic
+  pub_angles = n_dxl.advertise<std_msgs::Float32MultiArray>("msv/rgbd_angles", 1);
+  // Robotic arm base angle
+  pub_base = n_dxl.advertise<std_msgs::Float32>("msv/arm_base", 1000);
 
-    void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
-    void modeCallback (const std_msgs::String::ConstPtr& mode);
+  // Servos controller topic
+  sub_joy = n_dxl.subscribe("joy", 10, &MsvDxl::joyCallback, this);
+  // MSV-01 robot mode topic
+  sub_mode = n_dxl.subscribe("msv/mode", 1, &MsvDxl::modeCallback, this);
 
-  public:
-    msv_dxl (int verb ) : dxl("/dev/ttyUSB2") {
-      ROS_INFO("SETTING DYNAMIXELS UP...");
+  // RGBD orientation system disabled
+  on = 0;
+  send = 0;
 
-      // DXL handler
-      dxl.setBaudRate(460800);
-      if (dxl.openPort())
-        ROS_INFO("DXL SERIAL PORT OPEN");
-
-      // Servos position topic
-      pub_angles = n_dxl.advertise<std_msgs::Float32>("msv/RGBD_angles", 1);
-      // Robotic arm base angle
-      pub_base = n_dxl.advertise<std_msgs::UInt16>("msv/arm_base", 1000);
-
-      // Servos controller topic
-      sub_joy = n_dxl.subscribe("joy", 10, &msv_dxl::joyCallback, this);
-      // MSV-01 robot mode topic
-      sub_mode = n_dxl.subscribe("msv/mode", 1, &msv_dxl::modeCallback, this);
-
-      // RGBD orientation system disabled
-      on = 0;
-
-      // For servos control
-      x = 4;
-      y = 5;
-      // up and down equal to +z and -z, respectively
-      up = 4;
-      down = 6;
-
-    }
-};// End of class msv_dxl
+  // For servos control
+  x = 4;
+  y = 5;
+  // up and down equal to +z and -z, respectively
+  up = 4;
+  down = 6;
+}
 
 // Controller topic callback function
-void msv_dxl::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
+void MsvDxl::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 {
   if (on == 1) {
-    geometry_msgs::Twist twist;
 
     int dx = -1*joy->axes[x];
     int dy = joy->axes[y];
@@ -95,41 +99,49 @@ void msv_dxl::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if (joy->buttons[up] == 1) {
       // Move servo until the button is released
       ROS_INFO("MOVING RGBD SENSOR (+z)");
-      twist.linear.z = joy->buttons[up];
+      send = 1;
     }
     else if (joy->buttons[down] == 1) {
       // Move servo until the button is released
       ROS_INFO("MOVING RGBD SENSOR (-z)");
-      twist.linear.z = joy->buttons[down];
+      send = 1;
     }
 
     if (dx == 1) {
       // Move servo until the button is released
       ROS_INFO("MOVING RGBD SENSOR (+x)");
+      send = 1;
     }
     else if (dx == -1) {
       // Move servo until the button is released
       ROS_INFO("MOVING RGBD SENSOR (-x)");
+      send = 1;
     }
 
     if (dy == 1) {
       // Move servo until the button is released
       ROS_INFO("MOVING RGBD SENSOR (+y)");
+      send = 1;
     }
     else if (dy == -1) {
       // Move servo until the button is released
       ROS_INFO("MOVING RGBD SENSOR (-y)");
+      send = 1;
     }
-
-    twist.linear.x = x;
-    twist.linear.y = y;
-
-    //.publish(twist);
+    
+    if (send == 1) {
+      // Frame publishing
+      ocmd_angles.data.clear();
+      for (int i = 0; i < 3; i++) {
+        ocmd_angles.data.push_back(i+10.3);
+      }
+      pub_angles.publish(ocmd_angles);
+    }
   }
 }
 
 // MSV-01 robot controller mode callback function
-void msv_dxl::modeCallback(const std_msgs::String::ConstPtr& mode)
+void MsvDxl::modeCallback (const std_msgs::String::ConstPtr& mode)
 {
   if (mode->data == "rgbd") {
     on = 1;
@@ -141,18 +153,3 @@ void msv_dxl::modeCallback(const std_msgs::String::ConstPtr& mode)
   }
 }
 
-int main(int argc, char **argv)
-{
-
-  //Initiate ROS
-  ros::init(argc, argv, "msv_dxl");
-
-  //Create an object of class msv_dxl that will do the job
-  msv_dxl *rgbd;
-  msv_dxl d(1);
-  rgbd = &d;
-
-  ros::spin();
-
-  return 0;
-}
