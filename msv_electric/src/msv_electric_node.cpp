@@ -45,35 +45,32 @@
 
 int main (int argc, char **argv)
 {
-  // Initialize ROS
-  ros::init(argc, argv, "msv_electric");
-  ros::NodeHandle priv_nh("~");
-  
-  int _verbosity;
-  
-  if (priv_nh.getParam("verbosity", _verbosity)) {
-    ROS_INFO("Param _verbosity: %d", _verbosity);
-  }
-  else ROS_ERROR("Failed to get param: _verbosity");
-
-  try {
-    //Create an object of class MsvElectric that will do the job
-    MsvElectric *electric;
-    MsvElectric msv01_electric(_verbosity);
-    electric = &msv01_electric;
-    
-    ros::Rate loop_rate(5);
-
-    while (ros::ok()) {
-      ros::spinOnce();
-      loop_rate.sleep();
-      electric->senseMSV();
-    }
-    electric->close();
-    return 0;
-  } catch (boost::system::system_error ex) {
-    ROS_ERROR("Error instantiating msv_electric object. Error: %s", ex.what());
-    return -1;
-  }
+	// Initialize ROS
+	ros::init(argc, argv, "msv_electric");
+	ros::NodeHandle priv_nh("~");
+	
+	int _verbosity;
+	
+	priv_nh.param("verbosity", _verbosity, 0);
+	
+	try {
+		//Create an object of class MsvElectric that will do the job
+		MsvElectric *electric;
+		MsvElectric msv01_electric(_verbosity);
+		electric = &msv01_electric;
+		
+		ros::Rate loop_rate(5);
+		
+		while (ros::ok()) {
+			ros::spinOnce();
+			loop_rate.sleep();
+			electric->senseMSV();
+		}
+		electric->close();
+		return 0;
+	} catch (boost::system::system_error ex) {
+		ROS_ERROR("Error instantiating msv_electric object. Error: %s", ex.what());
+		return -1;
+	}
 }
 

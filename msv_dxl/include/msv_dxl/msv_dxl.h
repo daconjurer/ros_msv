@@ -62,7 +62,7 @@ class MsvDxl
 {
   private:
     // Serial port
-    msv::PortHandler dxl_port;
+    msv::PortHandler dxl_port();
 
     ros::NodeHandle n_dxl;
     ros::Publisher pub_angles;
