@@ -34,7 +34,7 @@
  *********************************************************************/
 
 ////////////////////////////////////////////////////////
-/// @file Direct port handler through USB-TTL converter
+/// @file Serial port handler through USB-TTL converter
 /// @author Victor Esteban Sandoval-Luna
 ////////////////////////////////////////////////////////
 
@@ -55,72 +55,61 @@ namespace msv
 
 class PortHandler
 {
-  private:
-    // attributes
-    char*   port_name;
-    int     socket_fd;
-    int     baudrate_;
-
-    double  packet_start_time_;
-    double  packet_timeout_;
-    double  tx_time_per_byte;
-
-    bool using_;
-
-    // methods
-    double getCurrentTime();
-    double getTimeSinceStart();
-
-    // Sets the attributes of the serial interface
-    int setInterfaceAttribs (int fd, int baudrate, int parity);
-
-    int remapBaudRate(const int baudrate);
-
-  public:
-    // Default Baudrate
-    const int DEFAULT_BAUDRATE = 115200;
-
-    // Constructor
-    PortHandler ();
-
-    virtual ~PortHandler() { }
-
-    // Opens the serial port
-    bool openPort();
-
-    // Closes the serial port
-    void closePort();
-
-    // Clears the port
-    void clearPort();
-
-    // Sets the name of the port
-    void setPortName(const char* port_name);
-
-    // Gets the name of the port
-    char *getPortName ();
-
-    // Sets the baudrate of the port
-    int setBaudRate(const int baudrate);
-
-    // Gets the baudrate of the port
-    int getBaudRate();
-
-    // Gets the number of bits available for reading from the port buffer
-    int getBytesAvailable();
-
-    // Reads buffer from port
-    int readPort(uint8_t *packet, int length);
-
-    // Reads byte from port
-    int readPort(uint8_t *byte);
-
-    // Writes buffer to port
-    int writePort(uint8_t *packet, int length);
-
-    // Writes byte to port
-    int writePort(uint8_t *byte);
-
+	private:
+		// ATTRIBUTES
+		char*   port_name_;
+		int     socket_fd_;
+		int     baudrate_;
+		
+		// METHODS
+		
+		// Set the attributes of the serial interface
+		int setInterfaceAttribs (int fd, int baudrate, int parity);
+		int setInterfaceAttribsArduino (int fd, int baudrate, int parity);
+		
+	public:
+		// Default Baudrate
+		const int DEFAULT_BAUDRATE = 115200;
+		
+		// Constructors
+		PortHandler ();
+		PortHandler (char* portname, int baudrate);
+		
+		virtual ~PortHandler() { }
+		
+		// Opens the serial port
+		bool openPort();
+		bool openPortArduino();
+		
+		// Closes the serial port
+		void closePort();
+		
+		// Clears the port
+		void clearPort();
+		
+		// Sets the name of the port
+		void setPortName(const char* port_name);
+		
+		// Gets the name of the port
+		char *getPortName ();
+		
+		// Sets the baudrate of the port
+		int setBaudRate(const int baudrate);
+		
+		// Gets the number of bits available for reading from the port buffer
+		int getBytesAvailable();
+		
+		// Reads buffer from port
+		int readPort(uint8_t *packet, int length);
+		
+		// Reads byte from port
+		int readPort(uint8_t *byte);
+		
+		// Writes buffer to port
+		int writePort(uint8_t *packet, int length);
+		
+		// Writes byte to port
+		int writePort(uint8_t* byte);
 };
 
 }
