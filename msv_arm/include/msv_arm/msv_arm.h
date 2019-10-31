@@ -34,7 +34,7 @@
  *********************************************************************/
  
 /////////////////////////////////////////////////////////////////////////////////////////
-/// @file ROS header for the dxl class of the MSV-01 rescue robot.
+/// @file ROS header for the arm class of the MSV-01 rescue robot.
 /// @author Victor Esteban Sandoval-Luna
 ///
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -75,71 +75,43 @@
 #define DXL_INSTRUCTION						0xA7
 
 #include <ros/ros.h>
-#include <msv_main/port_handler.h>
-#include <boost/asio.hpp>
-#include <sensor_msgs/Joy.h>
-#include <std_msgs/String.h>
-#include <std_msgs/Float32MultiArray.h>
+#include <herkulex_sdk.h>
+#include <unistd.h>
 #include <std_msgs/Float32.h>
-#include <std_msgs/UInt8MultiArray.h>
-#include <std_msgs/MultiArrayDimension.h>
-#include <string.h>
+#include <std_msgs/UInt16.h>
+#include <std_msgs/String.h>
+#include <sensor_msgs/Joy.h>
+#include <geometry_msgs/Twist.h>
 
-class MsvDxl
+using namespace herkulex;
+
+class MsvArm: public ServoHerkulex
 {
 	private:
-		// Serial port
-		msv::PortHandler ocmd;
-		
-		ros::NodeHandle n_dxl;
+		ros::NodeHandle n_arm;
 		ros::Publisher pub_angles;
-		ros::Publisher pub_base;
+		ros::Publisher pub_effector_vel;
 		
-		// For the remote control
+		// For the robotic arm control
 		ros::Subscriber sub_mode;
 		ros::Subscriber sub_joy;
 		
-		// Vector to store angles to be written (byte vales)
-		std::vector<uint8_t> raw_angles = std::vector<uint8_t> (1);
-		// Vector to store read raw data
-		std::vector<uint8_t> raw_data = std::vector<uint8_t> (1);
-		// Vector to store angles data
-		std::vector<float> read_angles = std::vector<float> (1);
-		
-		// Messages to be published
-		std_msgs::Float32MultiArray ocmd_angles;
-		std_msgs::Float32 arm_base;
-		
 		int on;
-		int x, y, up, down;
-		int send;
-		
-		int verbosity;
-		
-		// Physical limits of moving range (MIN, MAX, MIN, MAX, ..)
-		std::vector<uint16_t> angles_limits = std::vector<uint16_t> (1);
+		int y, x, z;
+		int up, down;
+		int power;
 		
 		void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
 		void modeCallback (const std_msgs::String::ConstPtr& mode);
 		
-		int initOCMD ();
-		
-		// Communication methods for the sensors port
-		int sendreceivePacketOCMD (const int& verbose, const int& ack_length);
-		// For debug purposes
-		int sendPacketOCMD (const int& verbose);
-		
-		std::string errorPacketHandler(const int& code);
-		std::string errorDxl(const int& code);
+		int constrainPower (const int& pwr);
 		
 	public:
-		MsvDxl (char* port, const int& baudrate, const int& verb);
-		
-		// Default AX-12 A range limits
-		const int MIN_GOAL_POSITION = 0x0000; // 0 bits, 0 degrees
-		const int MAX_GOAL_POSITION = 0x03FF; // 1023 bits, 300 degrees
+		// Constructor
+		MsvArm (char* port, const int& baudrate, const int& verb, const int& speed);
 		
 		void close ();
-};// End of class MsvDxl
+		
+};// End of class MsvArm
 
 #endif

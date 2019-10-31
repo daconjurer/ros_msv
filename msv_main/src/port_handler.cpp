@@ -47,7 +47,7 @@ PortHandler::PortHandler ()
 	setBaudRate(115200);
 }
 
-PortHandler::PortHandler (char* portname, int baudrate) 
+PortHandler::PortHandler (char* const portname, const int& baudrate) 
 {
 	port_name_= portname;
 	socket_fd_ = -1;
@@ -95,7 +95,7 @@ void PortHandler::clearPort ()
 	tcflush(socket_fd_, TCIFLUSH);
 }
 
-void PortHandler::setPortName (const char* portname) 
+void PortHandler::setPortName (char* const portname) 
 {
 	port_name_ = (char*)portname;
 }
@@ -105,7 +105,7 @@ char* PortHandler::getPortName ()
 	return port_name_;
 }
 
-int PortHandler::setBaudRate (const int baudrate) 
+int PortHandler::setBaudRate (const int& baudrate) 
 {
 	// Considering both Hovis HerkuleX servos limits and TTL hardware limits (up to 500000 bps)
 	int br = -1;
@@ -152,17 +152,17 @@ int PortHandler::getBytesAvailable ()
 	return bytes_available;
 }
 
-int PortHandler::readPort (uint8_t *packet, int length) 
+int PortHandler::readPort (uint8_t* const packet, const int& length) 
 {
 	return read(socket_fd_, packet, length);
 }
 
-int PortHandler::readPort (uint8_t *byte) 
+int PortHandler::readPort (uint8_t* const byte) 
 {
 	return read(socket_fd_, byte, 1);
 }
 
-int PortHandler::writePort (uint8_t *packet, int length) 
+int PortHandler::writePort (uint8_t *packet, const int& length) 
 {
 	return write(socket_fd_, packet, length);
 }
@@ -172,7 +172,7 @@ int PortHandler::writePort (uint8_t* byte)
 	return write(socket_fd_, byte, 1);
 }
 
-int PortHandler::setInterfaceAttribs (int fd, int baudrate, int parity) 
+int PortHandler::setInterfaceAttribs (const int& fd, const int& baudrate, const int& parity) 
 {
 	struct termios tty;
 	
@@ -224,7 +224,7 @@ int PortHandler::setInterfaceAttribs (int fd, int baudrate, int parity)
 	return 0;
 }
 
-int PortHandler::setInterfaceAttribsArduino (int fd, int baudrate, int parity) 
+int PortHandler::setInterfaceAttribsArduino (const int& fd, const int& baudrate, const int& parity) 
 {
 	struct termios tty;
 	

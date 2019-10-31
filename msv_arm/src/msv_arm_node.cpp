@@ -33,85 +33,84 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-////////////////////////////////////////////////////////
-/// @file Serial port handler through USB-TTL converter
+/////////////////////////////////////////////////////////////////////////////////////////
+/// @file ROS msv_arm package main application
+///
 /// @author Victor Esteban Sandoval-Luna
-////////////////////////////////////////////////////////
+///
+/////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef MSV_PORTHANDLER_H_
-#define MSV_PORTHANDLER_H_
+#define PORT_NAME								"/dev/ttyUSB0"
+#define BAUDRATE								115200
+#define VERBOSITY								0
+#define SPEED										0.5
 
-#include <iostream>
-#include <cerrno>
-#include <fcntl.h>
-#include <string.h>
-#include <cstring>
-#include <termios.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
+#include <msv_arm/msv_arm.h>
+#include <boost/asio.hpp>
 
-namespace msv
+int main (int argc, char **argv)
 {
-
-class PortHandler
-{
-	private:
-		// ATTRIBUTES
-		char*   port_name_;
-		int     socket_fd_;
-		int     baudrate_;
+	//Initiate ROS
+	ros::init(argc, argv, "msv_arm");
+	ros::NodeHandle priv_nh("~");
+	
+	int baudrate_;
+	std::string port_name_;
+	int verbosity_;
+	float speed_;
+	
+	priv_nh.param("port", port_name_, std::string(PORT_NAME));
+	priv_nh.param("baudrate", baudrate_, BAUDRATE);
+	priv_nh.param("verbosity", verbosity_, VERBOSITY);
+	priv_nh.param("speed", speed_, (float)SPEED);
+	
+	try {
+		//Create an object of class MsvArm that will do the job
+		MsvArm *arm;
+		MsvArm msv01_arm((char*)(port_name_.c_str()),baudrate_,verbosity_,speed_);
+		arm = &msv01_arm;
 		
-		// METHODS
+		ros::Rate loop_rate(5);
 		
-		// Set the attributes of the serial interface
-		int setInterfaceAttribs (const int& fd, const int& baudrate, const int& parity);
-		int setInterfaceAttribsArduino (const int& fd, const int& baudrate, const int& parity);
-		
-	public:
-		// Default Baudrate
-		const int DEFAULT_BAUDRATE = 115200;
-		
-		// Constructors
-		PortHandler ();
-		PortHandler (char* portname, const int& baudrate);
-		
-		virtual ~PortHandler() { }
-		
-		// Opens the serial port
-		bool openPort();
-		bool openPortArduino();
-		
-		// Closes the serial port
-		void closePort();
-		
-		// Clears the port
-		void clearPort();
-		
-		// Sets the name of the port
-		void setPortName(char* port_name);
-		
-		// Gets the name of the port
-		char *getPortName ();
-		
-		// Sets the baudrate of the port
-		int setBaudRate(const int& baudrate);
-		
-		// Gets the number of bits available for reading from the port buffer
-		int getBytesAvailable();
-		
-		// Reads buffer from port
-		int readPort(uint8_t* packet, const int& length);
-		
-		// Reads byte from port
-		int readPort(uint8_t* byte);
-		
-		// Writes buffer to port
-		int writePort(uint8_t* packet, const int& length);
-		
-		// Writes byte to port
-		int writePort(uint8_t* byte);
-};
-
+		while (ros::ok()) {
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
+		arm->close();
+		return 0;
+	} catch (boost::system::system_error ex) {
+		ROS_ERROR("Error instantiating msv_dxl object. Error: %s", ex.what());
+		return -1;
+	}
+	return 0;
 }
 
-#endif
+/*
+int main(int argc, char **argv)
+{
+
+  //Initiate ROS
+  ros::init(argc, argv, "msv_arm");
+
+  //Create an object of class msv_arm that will do the job
+  msv_arm *arm;
+  msv_arm hklx(1);
+  arm = &hklx;
+
+  //arm->setPortLabel(port_label);
+  //bool ctrl;
+
+  //ctrl = arm->setLED(2,5);
+
+  //ctrl = arm->torqueOn(5);
+
+  //std::cout << "move 5 angle" << '\n';
+  //bool c = arm->moveAngle0201(90,5,1,11.2);
+  //std::cout << c << std::endl;
+
+  ros::spin();
+
+  return 0;
+}
+*/
+
