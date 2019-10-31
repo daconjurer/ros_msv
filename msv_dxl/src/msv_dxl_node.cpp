@@ -40,21 +40,44 @@
 ///
 /////////////////////////////////////////////////////////////////////////////////////////
 
+#define PORT_NAME								"/dev/ttyACM0"
+#define BAUDRATE								115200
+#define VERBOSITY								0
+
 #include <msv_dxl/msv_dxl.h>
 #include <boost/asio.hpp>
 
 int main (int argc, char **argv)
 {
-
-  //Initiate ROS
-  ros::init(argc, argv, "msv_dxl");
-
-  //Create an object of class MsvDxl that will do the job
-  MsvDxl *rgbd;
-  MsvDxl dxl;
-  rgbd = &dxl;
-
-  ros::spin();
-
-  return 0;
+	//Initiate ROS
+	ros::init(argc, argv, "msv_dxl");
+	ros::NodeHandle priv_nh("~");
+	
+	int baudrate_;
+	std::string port_name_;
+	int verbosity_;
+	
+	priv_nh.param("port", port_name_, std::string(PORT_NAME));
+	priv_nh.param("baudrate", baudrate_, BAUDRATE);
+	priv_nh.param("verbosity", verbosity_, VERBOSITY);
+	
+	try {
+		//Create an object of class MsvDxl that will do the job
+		MsvDxl *dxl;
+		MsvDxl msv01_dxl((char*)(port_name_.c_str()),baudrate_,verbosity_);
+		dxl = &msv01_dxl;
+		
+		ros::Rate loop_rate(5);
+		
+		while (ros::ok()) {
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
+		dxl->close();
+		return 0;
+	} catch (boost::system::system_error ex) {
+		ROS_ERROR("Error instantiating msv_dxl object. Error: %s", ex.what());
+		return -1;
+	}
+	return 0;
 }

@@ -18,6 +18,7 @@
   <exec_depend>msv_bringup</exec_depend>
   <exec_depend>msv_teleop</exec_depend>
   <exec_depend>msv_electric</exec_depend>
+  <exec_depend>msv_arm</exec_depend>
   <exec_depend>msv_imu</exec_depend>
   <exec_depend>msv_dxl</exec_depend>
 

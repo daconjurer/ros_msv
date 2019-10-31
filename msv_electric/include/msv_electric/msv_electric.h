@@ -60,58 +60,54 @@
 
 class MsvElectric
 {
-  private:
-    // lightmodbus Master configuration struct
-    ModbusMaster master;
-
-    // Modbus coils and sensors data to be read
-    std::vector<uint8_t> coils = std::vector<uint8_t> (1);
-    std::vector<float> sensors = std::vector<float> (11);
-    
-    // Messages to be published
-    std_msgs::UInt8MultiArray bps_iregs;
-    std_msgs::UInt8MultiArray bps_coils;
-    msv_msgs::Electric sensors_msg;
-  
-    // For Master Exit code
-    uint8_t mec;
-  
-    // Serial port handler
-    msv::PortHandler bps;
-
-    // Interface sensors nodes
-    ros::NodeHandle n_electric;
-    ros::Publisher pub_coils;
-    ros::Publisher pub_regs;
-    ros::Publisher pub_sensors;
-    
-    int verbosity;
-    
-    std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
-
-    // Communication methods for the sensors port
-    int sendreceivePacketBPS (int verbose, int ack_length);
-
-    // For debug purposes
-    int sendPacketBPS (int verbose);
-
-    void delay(int ms);
-    
-    // For Modbus/Serial debugging
-    void printQuery ();
-    void printRegs ();
-    void printCoils ();
-
-  public:
-    MsvElectric (int verb);
-    virtual ~MsvElectric () {}
-    
-    // Sensing routine
-    void senseMSV ();
-    
-    // Close port method
-    void close ();
-
+	private:
+		// lightmodbus Master configuration struct
+		ModbusMaster master;
+		
+		// Modbus coils and sensors data to be read
+		std::vector<uint8_t> coils = std::vector<uint8_t> (1);
+		std::vector<float> sensors = std::vector<float> (11);
+		
+		// Messages to be published
+		std_msgs::UInt8MultiArray bps_iregs;
+		std_msgs::UInt8MultiArray bps_coils;
+		msv_msgs::Electric sensors_msg;
+		
+		// For Master Exit code
+		uint8_t mec;
+		
+		// Serial port handler
+		msv::PortHandler bps;
+		
+		// Interface sensors nodes
+		ros::NodeHandle n_electric;
+		ros::Publisher pub_coils;
+		ros::Publisher pub_regs;
+		ros::Publisher pub_sensors;
+		
+		int verbosity;
+		
+		std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
+		
+		// Communication methods for the sensors port
+		int sendreceivePacketBPS (int verbose, int ack_length);
+		
+		// For debug purposes
+		int sendPacketBPS (int verbose);
+		
+		// For Modbus/Serial debugging
+		void printQuery ();
+		
+	public:
+		MsvElectric (int verb);
+		virtual ~MsvElectric () {}
+		
+		// Sensing routine
+		void senseMSV ();
+		
+		// Close port method
+	void close ();
+	
 };// End of class msv_teleop
 
 #endif

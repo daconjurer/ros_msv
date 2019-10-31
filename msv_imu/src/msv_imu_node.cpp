@@ -75,8 +75,8 @@
 #include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
 
-int initIMU (msv::PortHandler &port);
-void getIMUData (msv::PortHandler &port, std::vector<uint8_t> &data);
+int initIMU (msv::PortHandler& port);
+void getIMUData (msv::PortHandler& port, std::vector<uint8_t>& data);
 
 int main (int argc, char **argv)
 {
@@ -150,7 +150,7 @@ int main (int argc, char **argv)
 	}
 }
 
-int initIMU (msv::PortHandler &port) 
+int initIMU (msv::PortHandler& port) 
 {
 	int k, n, c;
 	uint8_t init[1] = {0x10};
@@ -171,7 +171,7 @@ int initIMU (msv::PortHandler &port)
 	
 	// Decode ACK
 	if (n != 4) {
-		ROS_ERROR("ARDI ACK is corrupted.");
+		ROS_ERROR("ARDI Init ACK is corrupted.");
 		return -1;
 	}
 	
@@ -207,7 +207,7 @@ int initIMU (msv::PortHandler &port)
 	
 	// Decode ACK
 	if (n != 4) {
-		ROS_ERROR("ARDI ACK is corrupted.");
+		ROS_ERROR("ARDI COM ACK is corrupted.");
 		return -1;
 	}
 	
@@ -246,7 +246,7 @@ int initIMU (msv::PortHandler &port)
 	return 0;
 }
 
-void getIMUData (msv::PortHandler &port, std::vector<uint8_t> &data) 
+void getIMUData (msv::PortHandler& port, std::vector<uint8_t>& data) 
 {
 	int k, n;
 	uint8_t com[1] = {SEND_ARDI_DATA};

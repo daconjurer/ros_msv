@@ -24,5 +24,6 @@ catkin_package(
 
 add_executable(msv_dxl src/msv_dxl.cpp
 									src/msv_dxl_node.cpp)
+									
 target_link_libraries(msv_dxl ${catkin_LIBRARIES} msv_porthandler)
 
