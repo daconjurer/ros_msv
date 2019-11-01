@@ -134,6 +134,7 @@ class MsvDxl
 		
 	public:
 		MsvDxl (char* port, const int& baudrate, const int& verb);
+		virtual ~MsvDxl () {}
 		
 		// Default AX-12 A range limits
 		const int MIN_GOAL_POSITION = 0x0000; // 0 bits, 0 degrees

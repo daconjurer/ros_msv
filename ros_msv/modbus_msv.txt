@@ -6,27 +6,23 @@
 moving (ON/OFF) -- coil
 
 --BLDC1--
-state_bl1 (ON/OFF) -- coil
 fr_bl1 (ON/OFF) -- coil
+alm_bl1 (ON/OFF) -- coil
 sv_bl1 (0-255) -- holding register
 speed_bl1 (0-255) -- input register
-alm_bl1 (0-255) -- input register
 
 --BLDC2--
-state_bl2 (ON/OFF) -- coil
 fr_bl2 (ON/OFF) -- coil
+alm_bl2 (ON/OFF) -- coil
 sv_bl2 (0-255) -- holding register
 speed_bl2 (0-255) -- input register
-alm_bl2 (0-255) -- input register
 
 --DC1--
-state_dc1 (ON/OFF) -- coil
 dir_dc1 (ON/OFF) -- coil
 p_dc1 (0-255) -- holding register
 speed_dc1 (0-255) -- input register
 
 --DC2--
-state_dc2 (ON/OFF) -- coil
 dir_dc2 (ON/OFF) -- coil
 p_dc2 (0-255) -- holding register
 speed_dc2 (0-255) -- input register
@@ -73,16 +69,18 @@ p_dc1       40003
 p_dc2       40004
 
 --Coils--
-fr_bl1      1
-fr_bl2      2
-dir_dc1     3
-dir_dc2     4
-moving      5
+fr_bl1      1		// force
+fr_bl2      2		// force
+dir_dc1     3		// force
+dir_dc2     4		// force
+moving      5		// force
+alm_bl1     6		// read
+alm_bl2     7		// read
 
-led1        6
-led2        7
-led3        8
-led4        9
+led1        8
+led2        9
+led3        10
+led4        11
 
 torque1     80
 torque2     81
@@ -103,11 +101,9 @@ v2          30010
 co2         30011
 
 speed_bl1   30050
-alm_bl1     30051
-speed_bl2   30052
-alm_bl2     30053
-speed_dc1   30054
-speed_dc2   30055
+speed_bl2   30051
+speed_dc1   30052
+speed_dc2   30053
 
 theta1      30080
 theta2      30081

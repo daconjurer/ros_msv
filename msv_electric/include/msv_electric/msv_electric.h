@@ -63,18 +63,17 @@ class MsvElectric
 	private:
 		// lightmodbus Master configuration struct
 		ModbusMaster master;
+		// For Master Exit code
+		uint8_t mec;
 		
 		// Modbus coils and sensors data to be read
 		std::vector<uint8_t> coils = std::vector<uint8_t> (1);
 		std::vector<float> sensors = std::vector<float> (11);
 		
 		// Messages to be published
-		std_msgs::UInt8MultiArray bps_iregs;
-		std_msgs::UInt8MultiArray bps_coils;
+		std_msgs::UInt8MultiArray bps_read_iregs;
+		std_msgs::UInt8MultiArray bps_forced_coils;
 		msv_msgs::Electric sensors_msg;
-		
-		// For Master Exit code
-		uint8_t mec;
 		
 		// Serial port handler
 		msv::PortHandler bps;
@@ -90,16 +89,16 @@ class MsvElectric
 		std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
 		
 		// Communication methods for the sensors port
-		int sendreceivePacketBPS (int verbose, int ack_length);
+		int sendreceivePacketBPS (const int& verbose, const int& ack_length);
 		
 		// For debug purposes
-		int sendPacketBPS (int verbose);
+		int sendPacketBPS (const int& verbose);
 		
 		// For Modbus/Serial debugging
 		void printQuery ();
 		
 	public:
-		MsvElectric (int verb);
+		MsvElectric (const int& verb);
 		virtual ~MsvElectric () {}
 		
 		// Sensing routine
@@ -111,3 +110,4 @@ class MsvElectric
 };// End of class msv_teleop
 
 #endif
+

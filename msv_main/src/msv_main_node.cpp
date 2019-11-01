@@ -44,48 +44,39 @@
 /// please see https://github.com/Jacajack/liblightmodbus.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/*
-* PENDINGS
-* arm
-* rgbd
-*/
+#define VERBOSITY							0
 
 #include <msv_main/msv_main.h>
 #include <boost/asio.hpp>
 
 int main (int argc, char **argv)
 {
-  //Initialize ROS
-  ros::init(argc, argv, "msv_main");
-  ros::NodeHandle priv_nh("~");
-  
-  int _verbosity;
-  
-  if (priv_nh.getParam("verbosity", _verbosity)) {
-    ROS_INFO("Param _verbosity: %d", _verbosity);
-  }
-  else ROS_ERROR("Failed to get param: _verbosity");
-  
-  boost::asio::io_service io;
-  
-  try {
-    //Create an object of class MsvMain that will do the job
-    MsvMain *robot;
-    MsvMain msv01(_verbosity);
-    robot = &msv01;
-    
-    ros::Rate loop_rate(10);
-
-    while (ros::ok()) {
-      // Node callbacks handling
-      ros::spinOnce();
-      loop_rate.sleep();
-    }
-    
-    return 0;
-  } catch (boost::system::system_error ex) {
-    ROS_ERROR("Error instantiating msv_main object. Error: %s", ex.what());
-    return -1;
-  }
+	//Initialize ROS
+	ros::init(argc, argv, "msv_main");
+	ros::NodeHandle priv_nh("~");
+	
+	int verbosity_;
+	
+	priv_nh.param("verbosity", verbosity_, VERBOSITY);
+	
+	try {
+		//Create an object of class MsvMain that will do the job
+		MsvMain *robot;
+		MsvMain msv01(verbosity_);
+		robot = &msv01;
+		
+		ros::Rate loop_rate(10);
+		
+		while (ros::ok()) {
+			// Node callbacks handling
+			ros::spinOnce();
+			loop_rate.sleep();
+		}
+		
+		return 0;
+	} catch (boost::system::system_error ex) {
+		ROS_ERROR("Error instantiating msv_main object. Error: %s", ex.what());
+		return -1;
+	}
 }
 

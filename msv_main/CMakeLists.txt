@@ -25,7 +25,7 @@ catkin_package(
 )
 
 add_executable(msv_robot src/msv_main.cpp
-									src/main_publisher.cpp)
+									src/msv_main_node.cpp)
 									
 target_link_libraries(msv_robot ${catkin_LIBRARIES} lightmodbus)
 

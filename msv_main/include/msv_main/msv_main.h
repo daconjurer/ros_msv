@@ -62,61 +62,60 @@
 
 class MsvMain
 {
-  private:
-    // lightmodbus Master configuration struct
-    ModbusMaster master;
-
-    // Modbus registers and coils
-    std::vector<uint16_t> hregs = std::vector<uint16_t> (4);
-    std::vector<uint8_t> coils = std::vector<uint8_t> (1);
-    
-    // Arrays to be published
-    std_msgs::UInt8MultiArray bpt_hregs;
-    std_msgs::UInt8MultiArray bpt_coils;
-
-    // For Master Exit code
-    uint8_t mec;
-
-    // MSV-01 robot main nodes
-    ros::NodeHandle n_main;
-    ros::Publisher pub_state;
-    ros::Publisher pub_mode;
-    ros::Publisher pub_power;
-    ros::Publisher pub_vel;
-    ros::Publisher pub_coils;
-    ros::Publisher pub_regs;
-
-    // Joy node subscriber
-    ros::Subscriber sub_joy;
-
-    // Verbosity and traction power attributes
-    int verbosity;
-    int power;
-
-    // Buttons memories
-    int l, a, f, s;
-    int sel;
-
-    int send;
-
-    // Buttons indexes
-    int linear, angular, up, down;
-    
-    // Robot modes
-    int mode, turn_mode;
-    
-    // Joy node callback
-    void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
-
-    // For Modbus/Serial debugging
-    void printQuery ();
-    void printRegs ();
-    void printCoils ();
-
-  public:
-    MsvMain (int verb);
-    virtual ~MsvMain () {}
-    
+	private:
+		// lightmodbus Master configuration struct
+		ModbusMaster master;
+		// For Master Exit code
+		uint8_t mec;
+		
+		// Modbus registers and coils
+		std::vector<uint16_t> hregs = std::vector<uint16_t> (4);
+		std::vector<uint8_t> coils = std::vector<uint8_t> (1);
+		
+		// Arrays to be published
+		std_msgs::UInt8MultiArray bpt_preset_hregs;
+		std_msgs::UInt8MultiArray bpt_forced_coils;
+		
+		// MSV-01 robot main nodes
+		ros::NodeHandle n_main;
+		ros::Publisher pub_state;
+		ros::Publisher pub_mode;
+		ros::Publisher pub_power;
+		ros::Publisher pub_vel;
+		ros::Publisher pub_coils;
+		ros::Publisher pub_regs;
+		
+		// Joy node subscriber
+		ros::Subscriber sub_joy;
+		
+		// Verbosity and traction power attributes
+		int verbosity;
+		int power;
+		
+		// Buttons memories
+		int l, a, f, s;
+		int sel;
+		
+		int send;
+		
+		// Buttons indexes
+		int linear, angular, up, down;
+		
+		// Robot modes
+		int mode, turn_mode;
+		
+		// Joy node callback
+		void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
+		
+		// For Modbus/Serial debugging
+		void printQuery ();
+		void printRegs ();
+		void printCoils ();
+		
+	public:
+		MsvMain (const int& verb);
+		virtual ~MsvMain () {}
+		
 };// End of class MsvMain
 
 #endif
