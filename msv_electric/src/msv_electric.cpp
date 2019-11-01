@@ -51,7 +51,7 @@
 /* PENDING: */
 // Read the keyboard to turn LEDs on and off
 
-MsvElectric::MsvElectric (int verb)
+MsvElectric::MsvElectric (const int& verb)
 {
 	ROS_INFO("SETTING ELECTRIC NODE UP...");
 	
@@ -80,17 +80,17 @@ MsvElectric::MsvElectric (int verb)
 	coils[0] = 0x00;
 	
 	// Multiarrays set up
-	bps_iregs.layout.dim.push_back(std_msgs::MultiArrayDimension());
-	bps_iregs.layout.dim[0].size = 8;
-	bps_iregs.layout.dim[0].stride = 1;
-	bps_iregs.layout.dim[0].label = "iregs";
+	bps_read_iregs.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	bps_read_iregs.layout.dim[0].size = 8;
+	bps_read_iregs.layout.dim[0].stride = 1;
+	bps_read_iregs.layout.dim[0].label = "ss_read_iregs";
 	
-	bps_coils.layout.dim.push_back(std_msgs::MultiArrayDimension());
-	bps_coils.layout.dim[0].size = 10;
-	bps_coils.layout.dim[0].stride = 1;
-	bps_coils.layout.dim[0].label = "coils";
+	bps_forced_coils.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	bps_forced_coils.layout.dim[0].size = 10;
+	bps_forced_coils.layout.dim[0].stride = 1;
+	bps_forced_coils.layout.dim[0].label = "ss_forced_coils";
 	
-	// Sensors message set up
+	// Sensors data array and Electric message set up
 	for (int i = 0; i < 11; i++) {
 		sensors[i] = 0.0;
 	}
@@ -101,8 +101,8 @@ MsvElectric::MsvElectric (int verb)
 void MsvElectric::senseMSV ()
 {
 	if (verbosity == 1) {
-		/* Coils frame request frame building */
-		modbusBuildRequest15(&master,1,5,4,coils.data());
+		/* Coils request frame building */
+		modbusBuildRequest15(&master,1,7,4,coils.data());
 		//ROS_INFO("BPS COILS QUERY:");
 		//printQuery();
 		
@@ -111,11 +111,11 @@ void MsvElectric::senseMSV ()
 		sendreceivePacketBPS(1,8);
 		
 		// Frame publishing
-		bps_coils.data.clear();
+		bps_forced_coils.data.clear();
 		for (int i = 0; i < master.request.length; i++) {
-			bps_coils.data.push_back(master.request.frame[i]);
+			bps_forced_coils.data.push_back(master.request.frame[i]);
 		}
-		pub_coils.publish(bps_coils);
+		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
 		modbusBuildRequest03(&master,1,0,11);
@@ -125,18 +125,18 @@ void MsvElectric::senseMSV ()
 		sendreceivePacketBPS(1,27);
 	} else {
 		/* Coils frame request frame building */
-		modbusBuildRequest15(&master,1,5,4,coils.data());
+		modbusBuildRequest15(&master,1,7,4,coils.data());
 		
 		// Send request
 		//sendPacketBPS(0);
 		sendreceivePacketBPS(0,8);
 		
 		// Frame publishing
-		bps_coils.data.clear();
+		bps_forced_coils.data.clear();
 		for (int i = 0; i < master.request.length; i++) {
-			bps_coils.data.push_back(master.request.frame[i]);
+			bps_forced_coils.data.push_back(master.request.frame[i]);
 		}
-		pub_coils.publish(bps_coils);
+		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
 		modbusBuildRequest03(&master,1,0,11);
@@ -147,11 +147,11 @@ void MsvElectric::senseMSV ()
 	}
 	
 	// Frames publishing
-	bps_iregs.data.clear();
+	bps_read_iregs.data.clear();
 	for (int i = 0; i < master.request.length; i++) {
-		bps_iregs.data.push_back(master.request.frame[i]);
+		bps_read_iregs.data.push_back(master.request.frame[i]);
 	}
-	pub_regs.publish(bps_iregs);
+	pub_regs.publish(bps_read_iregs);
 	
 	// Sensors data decoding and publishing
 	for (int i = 0; i < master.data.count; i++) {
@@ -163,7 +163,7 @@ void MsvElectric::senseMSV ()
 	pub_sensors.publish(sensors_msg);
 }
 
-int MsvElectric::sendreceivePacketBPS (int verbose, int ack_length) 
+int MsvElectric::sendreceivePacketBPS (const int& verbose, const int& ack_length) 
 {
 	uint8_t rl = master.request.length + 1;
 	ack_modbus.resize(ack_length);
@@ -206,7 +206,7 @@ int MsvElectric::sendreceivePacketBPS (int verbose, int ack_length)
 	return n;
 }
 
-int MsvElectric::sendPacketBPS (int verbose) 
+int MsvElectric::sendPacketBPS (const int& verbose) 
 {
 	int k = 0;
 	uint8_t rl = master.request.length + 1;
@@ -215,7 +215,7 @@ int MsvElectric::sendPacketBPS (int verbose)
 	*(buf+rl-1) = 0xFF;
 	
 	bps.clearPort();
-	k = bps.writePort(buf, rl);
+	k = bps.writePort(buf,rl);
 	usleep (rl * 10);
 	
 	if (verbose) {

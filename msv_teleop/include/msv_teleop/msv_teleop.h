@@ -37,6 +37,9 @@
 /// @file ROS header for the teleop class of the MSV-01 rescue robot.
 /// @author Victor Esteban Sandoval-Luna
 ///
+/// Based on the Modbus protocol "lightmodbus" library (RTU) from Jacek Wieczorek,
+/// please see https://github.com/Jacajack/liblightmodbus.
+///
 /// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -53,44 +56,64 @@
 #include <std_msgs/UInt8MultiArray.h>
 #include <msv_msgs/Actuators.h>
 
+#include <lightmodbus/lightmodbus.h>
+#include <lightmodbus/master.h>
+#include <lightmodbus/slave.h>
+
 class MsvTeleop
 {
-  private:
-    // Serial port handler
-    msv::PortHandler bpt;
-
-    // Interface actuators nodes
-    ros::NodeHandle n_teleop;
-    ros::Subscriber sub_coils;
-    ros::Subscriber sub_regs;
-    ros::Publisher pub_actuators;
-    
-    // Arrays for decodifying
-    std::vector<uint8_t> regs_query = std::vector<uint8_t> (17);
-    std::vector<uint8_t> coils_query = std::vector<uint8_t> (10);
-    
-    // Messages to be published
-    msv_msgs::Actuators actuators_msg;
-
-    int verbosity;
-    
-    std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
-
-    void coilsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer);
-    void regsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer);
-
-    // Communication methods for the controller port
-    int sendreceivePacketBPT (int verbose, int ack_length, std::vector<uint8_t> buffer);
-
-    // For debug purposes
-    int sendPacketBPT (int verbose, std::vector<uint8_t> buffer);
-
-    void delay(int ms);
-
-  public:
-    MsvTeleop (int verb);
-    virtual ~MsvTeleop () {}
-
+	private:
+		// lightmodbus Master configuration struct
+		ModbusMaster master;
+		// For Master Exit code
+		uint8_t mec;
+		
+		// Modbus coils and actuators data to be read
+		std::vector<uint8_t> coils = std::vector<uint8_t> (1);
+		std::vector<float> actuators = std::vector<float> (6);
+		
+		// Arrays to be published
+		std_msgs::UInt8MultiArray bpt_read_iregs;
+		std_msgs::UInt8MultiArray bpt_read_coils;
+		
+		// Messages to be published
+		std_msgs::UInt8MultiArray bps_iregs;
+		std_msgs::UInt8MultiArray bps_coils;
+		msv_msgs::Actuators actuators_msg;
+		
+		// Serial port handler
+		msv::PortHandler bpt;
+		
+		// Interface actuators nodes
+		ros::NodeHandle n_teleop;
+		ros::Subscriber sub_coils;
+		ros::Subscriber sub_regs;
+		ros::Publisher pub_actuators;
+		
+		// Arrays for decodifying
+		std::vector<uint8_t> iregs_query = std::vector<uint8_t> (17);
+		std::vector<uint8_t> coils_query = std::vector<uint8_t> (10);
+		
+		int verbosity;
+		
+		std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
+		
+		void coilsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer);
+		void regsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer);
+		
+		// Communication methods for the controller port
+		int sendreceivePacketBPT (const int& verbose, const int& ack_length, std::vector<uint8_t>& buffer);
+		int sendreceivePacketBPT (const int& verbose, const int& ack_length);
+		
+		// For debug purposes
+		int sendPacketBPT (const int& verbose, std::vector<uint8_t>& buffer);
+		int sendPacketBPT (const int& verbose);
+		
+	public:
+		MsvTeleop (const int& verb);
+		virtual ~MsvTeleop () {}
+		
 };// End of class MsvTeleop
 
 #endif
+
