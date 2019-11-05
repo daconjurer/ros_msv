@@ -40,6 +40,10 @@
 ///
 /////////////////////////////////////////////////////////////////////////////////////////
 
+#define PORT_NAME								"/dev/ttyUSB0"
+#define BAUDRATE								115200
+#define VERBOSITY								0
+
 #include <msv_electric/msv_electric.h>
 #include <boost/asio.hpp>
 
@@ -49,14 +53,18 @@ int main (int argc, char **argv)
 	ros::init(argc, argv, "msv_electric");
 	ros::NodeHandle priv_nh("~");
 	
-	int _verbosity;
+	int baudrate_;
+	std::string port_name_;
+	int verbosity_;
 	
-	priv_nh.param("verbosity", _verbosity, 0);
+	priv_nh.param("port", port_name_, std::string(PORT_NAME));
+	priv_nh.param("baudrate", baudrate_, BAUDRATE);
+	priv_nh.param("verbosity", verbosity_, VERBOSITY);
 	
 	try {
 		//Create an object of class MsvElectric that will do the job
 		MsvElectric *electric;
-		MsvElectric msv01_electric(_verbosity);
+		MsvElectric msv01_electric((char*)(port_name_.c_str()),baudrate_,verbosity_);
 		electric = &msv01_electric;
 		
 		ros::Rate loop_rate(5);

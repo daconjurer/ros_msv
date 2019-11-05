@@ -98,7 +98,7 @@ class MsvElectric
 		void printQuery ();
 		
 	public:
-		MsvElectric (const int& verb);
+		MsvElectric (char* port, const int& baudrate, const int& verb);
 		virtual ~MsvElectric () {}
 		
 		// Sensing routine
