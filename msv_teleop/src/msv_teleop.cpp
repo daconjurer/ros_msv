@@ -284,7 +284,6 @@ void MsvTeleop::readCoils ()
 	//sendPacketBPT(1);
 	sendreceivePacketBPT(verbosity,6);
 	
-	/*
 	// Coils data decoding and publishing
 	for (int i = 0; i < master.data.count; i++) {
 		rcoils[i] = modbusMaskRead(master.data.coils,master.data.length,i);
@@ -292,14 +291,10 @@ void MsvTeleop::readCoils ()
 	}
 	
 	for (int i = 0; i < 2; i++) {
-		alarms[i] = (rcoils[i] == 0x80) ? true : false;
+		alarms[i] = (rcoils[i] == 0x80) ? 1 : 0;
 	}
 	
-	sensors_msg.header.stamp = ros::Time::now();
-	sensors_msg.values = sensors;
-	pub_sensors.publish(sensors_msg);
-	
-	*/
+	actuators_msg.alarms = alarms;
 	
 	return;
 }
@@ -323,6 +318,8 @@ void MsvTeleop::readInputRegisters ()
 		actuators[i] = iregs[i];
 	}
 	
+	actuators_msg.values = actuators;
+	
 	return;
 }
 
@@ -330,6 +327,9 @@ void MsvTeleop::sense ()
 {
 	readCoils();
 	readInputRegisters();
+	
+	actuators_msg.header.stamp = ros::Time::now();
+	pub_actuators.publish(actuators_msg);
 }
 
 int MsvTeleop::sendreceivePacketBPT (const int& verbose, const int& ack_length) 

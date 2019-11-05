@@ -75,7 +75,7 @@ class MsvTeleop
 		
 		// Modbus coils and actuators data to be read
 		std::vector<uint8_t> rcoils = std::vector<uint8_t> (2);
-		std::vector<bool> alarms = std::vector<bool> (2);
+		std::vector<uint8_t> alarms = std::vector<uint8_t> (2);
 		std::vector<uint16_t> iregs = std::vector<uint16_t> (4);
 		std::vector<float> actuators = std::vector<float> (4);
 		
