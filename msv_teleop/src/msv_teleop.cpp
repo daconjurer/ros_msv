@@ -43,19 +43,30 @@
 /// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-/* PENDINGS */
-// Publish actuators
-// Manage verbosity
+/* TODO */
+// Publish actuators and coils decoded data
 
 #include <msv_teleop/msv_teleop.h>
 
-MsvTeleop::MsvTeleop (const int& verb)
+MsvTeleop::MsvTeleop (char* const port, const int& baudrate, const int& verb) : bpt(port,baudrate) 
 {
 	ROS_INFO("SETTING TELEOP NODE UP...");
 	
-	// Main publisher topics
-	sub_coils = n_teleop.subscribe("msv/ts_coils", 1, &MsvTeleop::coilsCallback, this);
-	sub_regs = n_teleop.subscribe("msv/ts_regs", 1, &MsvTeleop::regsCallback, this);
+	// cmd_vel commands subscriber
+	sub_vel = n_teleop.subscribe("msv/cmd_vel", 1, &MsvTeleop::twistCallback, this);
+	// turn mode subscriber
+	sub_mode = n_teleop.subscribe("msv/mode", 1, &MsvTeleop::modeCallback, this);
+	
+	// Actuators' data topic (published when the slave sends the actuators data)
+	pub_actuators = n_teleop.advertise<std_msgs::String>("msv/state", 1);
+	// Modbus traction system read coils topic (published every time the slave sends the coils data)
+	pub_rcoils = n_teleop.advertise<std_msgs::UInt8MultiArray>("msv/ts_read_coils",1);
+	// Modbus traction system read input registers topic (published every time the slave sends the input registers data)
+	pub_iregs = n_teleop.advertise<std_msgs::UInt8MultiArray>("msv/ts_read_iregs",1);
+	// Modbus traction system forced coils topic (published every time a new Joy command arrives)
+	pub_fcoils = n_teleop.advertise<std_msgs::UInt8MultiArray>("msv/ts_forced_coils", 10);
+	// Modbus traction system holding regs topic (published every time a new Joy command arrives)
+	pub_hregs = n_teleop.advertise<std_msgs::UInt8MultiArray>("msv/ts_preset_hregs", 10);
 	
 	// Port handler
 	if (bpt.openPort()) {
@@ -69,8 +80,35 @@ MsvTeleop::MsvTeleop (const int& verb)
 		ROS_INFO("MODBUS MASTER COULD NOT BE INITIALIZED");
 	else ROS_INFO("MODBUS MASTER INITIALIZED");
 	
+	// Multiarrays set up
+	bpt_read_iregs.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	bpt_read_iregs.layout.dim[0].size = 8;
+	bpt_read_iregs.layout.dim[0].stride = 1;
+	bpt_read_iregs.layout.dim[0].label = "ts_read_iregs";
+	
+	bpt_read_coils.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	bpt_read_coils.layout.dim[0].size = 8;
+	bpt_read_coils.layout.dim[0].stride = 1;
+	bpt_read_coils.layout.dim[0].label = "ts_read_coils";
+	
+	bpt_preset_hregs.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	bpt_preset_hregs.layout.dim[0].size = 17;
+	bpt_preset_hregs.layout.dim[0].stride = 1;
+	bpt_preset_hregs.layout.dim[0].label = "ts_preset_hregs";
+	
+	bpt_forced_coils.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	bpt_forced_coils.layout.dim[0].size = 10;
+	bpt_forced_coils.layout.dim[0].stride = 1;
+	bpt_forced_coils.layout.dim[0].label = "ts_forced_coils";
+	
 	// Verbosity attribute
 	verbosity = verb;
+	// Turn mode attribute (z axis turn by default)
+	turn_mode = 0;
+	
+	l = 0;
+	a = 0;
+	f = 0;
 	
 	// Actuators data array and Actuators message set up
 	for (int i = 0; i < 6; i++) {
@@ -80,81 +118,218 @@ MsvTeleop::MsvTeleop (const int& verb)
 	actuators_msg.values.reserve(6);
 }
 
-void MsvTeleop::coilsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer) 
+void MsvTeleop::modeCallback (const std_msgs::String::ConstPtr& mode) 
 {
-	int i = 0;
-	// Decode the data of the Multiarray struct
-	for(std::vector<uint8_t>::const_iterator it = buffer->data.begin(); it != buffer->data.end(); ++it)
-	{
-		coils_query[i] = *it;
-		i++;
+	if (mode->data == "robot_z") {
+		turn_mode = 0;
 	}
-	// Coils forcing frame
-	//sendPacketBPT(1,coils_query);
-	sendreceivePacketBPT(1,10,coils_query);
-	
-	// Coils reading frame
-	modbusBuildRequest01(&master,0,5,2);		// addresses 6-7
-	
-	// Coils data decoding and publishing
-	uint8_t temp = 0;
-	for (int i = 0; i < master.data.count; i++) {
-		temp = modbusMaskRead(master.data.coils,master.data.length,i);
+	if (mode->data == "robot_s") {
+		turn_mode = 1;
 	}
 }
 
-void MsvTeleop::regsCallback (const std_msgs::UInt8MultiArray::ConstPtr& buffer) 
+void MsvTeleop::twistCallback (const geometry_msgs::Twist& twist) 
 {
-	int i = 0;
-	// Decode the data of the Multiarray struct
-	for(std::vector<uint8_t>::const_iterator it = buffer->data.begin(); it != buffer->data.end(); ++it)
-	{
-		iregs_query[i] = *it;
-		i++;
+	float linear_x = twist.linear.x;
+	float angular_z = twist.angular.z;
+	float linear_y = twist.linear.y;
+	
+	hregs[2] = 0x0000;
+	hregs[3] = 0x0000;
+	
+	// Decode the twist values and convert into 8-bits data (for PWM)
+	
+	// Forward/reverse
+	if (linear_x > 0) {
+		// SV
+		hregs[0] = (uint16_t)linear_x;
+		hregs[1] = (uint16_t)linear_x;
+		
+		// F/R
+		fcoils[0] = 0x11;    // 0001 0001
+	}
+	else if (linear_x < 0) {
+		// SV
+		hregs[0] = (uint16_t)(-1*linear_x);
+		hregs[1] = (uint16_t)(-1*linear_x);
+		
+		// F/R
+		fcoils[0] = 0x12;    // 0001 0010
+	}
+	else if (linear_x == 0 && l != 0) {
+		// SV
+		hregs[0] = 0x0000;
+		hregs[1] = 0x0000;
+		
+		// Stop
+		fcoils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
 	}
 	
-	// Holding registers writting frame
-	//sendPacketBPT(1,regs_query);
-	sendreceivePacketBPT(1,17,iregs_query);
+	// Turn routines
+	// Turn around z axis (mode 0)
+	else if (angular_z > 0 && turn_mode == 0) {
+		// SV
+		hregs[0] = (uint16_t)angular_z;
+		hregs[1] = (uint16_t)angular_z;
+		
+		// F/R
+		fcoils[0] = 0x13;    // 0001 0011
+	}
+	else if (angular_z < 0 && turn_mode == 0) {
+		// SV
+		hregs[0] = (uint16_t)(-1*angular_z);
+		hregs[1] = (uint16_t)(-1*angular_z);
+		
+		// F/R
+		fcoils[0] = 0x10;    // 0001 0000
+	}
+	else if ((angular_z == 0 && turn_mode == 0) && a != 0) {
+		// SV
+		hregs[0] = 0x0000;
+		hregs[1] = 0x0000;
+		
+	// Stop
+		fcoils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
+	}
+	// Smooth turn (mode 1)
+	else if (angular_z > 0 && turn_mode == 1) {
+		// SV
+		hregs[0] = (uint16_t)angular_z;
+		hregs[1] = (uint16_t)(angular_z/2);
+		
+		// F/R
+		fcoils[0] = 0x11;    // 0001 0001
+	}
+	else if (angular_z < 0 && turn_mode == 1) {
+		// SV
+		hregs[1] = (uint16_t)(-1*angular_z);
+		hregs[0] = (uint16_t)(-angular_z/2);
+		
+		// F/R
+		fcoils[0] = 0x12;    // 0001 0010
+	}
+	else if ((angular_z == 0 && turn_mode == 1) && a != 0) {
+		// SV
+		hregs[0] = 0x0000;
+		hregs[1] = 0x0000;
+		
+		// Stop
+		fcoils[0] = 0x00;    // 0000 0000 (could be 0x03 as well)
+	}
 	
+	if (linear_y < 0) {
+		f = linear_y;
+		// Flippers DOWN
+		hregs[2] = 0x00FE;
+		hregs[3] = 0x00FE;
+		
+		// Direction
+		fcoils[0] = 0x14;    // 0001 0100
+	}
+	else if (linear_y > 0) {
+		f = linear_y;
+		// Flippers UP
+		hregs[2] = 0x00FE;
+		hregs[3] = 0x00FE;
+		
+		// Direction
+		fcoils[0] = 0x18;    // 0001 1000
+	}
+	else if (linear_y == 0 && f != 0) {
+		f = 0;
+		// Flippers OFF
+		hregs[2] = 0x0000;
+		hregs[3] = 0x0000;
+		
+		// Stop
+		fcoils[0] = 0x00;    // 0000 0000 (could be 0x0C as well)
+	}
+	
+	l = linear_x;
+	a = angular_z;
+	
+	/* Build up, publish and send frames */
+	
+	// Coils forcing frame
+	mec = modbusBuildRequest15(&master,1,0,5,fcoils.data());
+	bpt_forced_coils.data.clear();
+	for (int i = 0; i < master.request.length; i++) {
+		bpt_forced_coils.data.push_back(master.request.frame[i]);
+	}
+	
+	sendreceivePacketBPT(verbosity,8);
+	pub_fcoils.publish(bpt_forced_coils);
+
+	// Holding registers presetting frame
+	mec = modbusBuildRequest16(&master,1,0,4,hregs.data());
+	bpt_preset_hregs.data.clear();
+	for (int i = 0; i < master.request.length; i++) {
+		bpt_preset_hregs.data.push_back(master.request.frame[i]);
+	}
+	
+	sendreceivePacketBPT(verbosity,8);
+	pub_hregs.publish(bpt_preset_hregs);
+}
+
+void MsvTeleop::readCoils () 
+{
+	// Coils reading frame
+	mec = modbusBuildRequest01(&master,1,5,2);		// addresses 6-7
+	bpt_read_coils.data.clear();
+	for (int i = 0; i < master.request.length; i++) {
+		bpt_read_coils.data.push_back(master.request.frame[i]);
+	}
+	pub_rcoils.publish(bpt_read_coils);
+	
+	//sendPacketBPT(1);
+	sendreceivePacketBPT(verbosity,6);
+	
+	/*
+	// Coils data decoding and publishing
+	for (int i = 0; i < master.data.count; i++) {
+		rcoils[i] = modbusMaskRead(master.data.coils,master.data.length,i);
+		printf("%d\n",rcoils[i]);
+	}
+	
+	for (int i = 0; i < 2; i++) {
+		alarms[i] = (rcoils[i] == 0x80) ? true : false;
+	}
+	
+	sensors_msg.header.stamp = ros::Time::now();
+	sensors_msg.values = sensors;
+	pub_sensors.publish(sensors_msg);
+	
+	*/
+	
+	return;
+}
+
+void MsvTeleop::readInputRegisters () 
+{
 	// Input registers reading frame
-	modbusBuildRequest03(&master,0,49,4);		// adresses 50 - 53
-	sendreceivePacketBPT(1,8);
+	mec = modbusBuildRequest03(&master,1,49,4);		// adresses 50 - 53
+	bpt_read_iregs.data.clear();
+	for (int i = 0; i < master.request.length; i++) {
+		bpt_read_iregs.data.push_back(master.request.frame[i]);
+	}
+	pub_iregs.publish(bpt_read_iregs);
+	
+	//sendPacketBPT(1);
+	sendreceivePacketBPT(verbosity,13);
 	
 	// Input registers data decoding and publishing
 	for (int i = 0; i < master.data.count; i++) {
-		actuators[i] = master.data.regs[i];
+		iregs[i] = master.data.regs[i];
+		actuators[i] = iregs[i];
 	}
+	
+	return;
 }
 
-int MsvTeleop::sendreceivePacketBPT (const int& verbose, const int& ack_length, std::vector<uint8_t>& buffer) 
+void MsvTeleop::sense () 
 {
-	int n, k;
-	uint8_t rl = buffer.size() + 1;
-	
-	uint8_t* buf = buffer.data();
-	*(buf+rl-1) = 0xFF;
-	
-	bpt.clearPort();
-	k = bpt.writePort(buf,rl);
-	usleep ((rl + ack_length) * 10);
-	
-	for (int i = 0; i < ack_length; i++) {
-		n = bpt.readPort(&ack_modbus[i]);
-	}
-	
-	if (k != rl) {
-		return -1;
-	}
-	
-	if (verbose) {
-		for (int j = 0; j < ack_length; j++) {
-			printf("%X ", ack_modbus[j]);
-		}
-		printf("\n");
-	}
-	
-	return n;
+	readCoils();
+	readInputRegisters();
 }
 
 int MsvTeleop::sendreceivePacketBPT (const int& verbose, const int& ack_length) 
@@ -200,28 +375,6 @@ int MsvTeleop::sendreceivePacketBPT (const int& verbose, const int& ack_length)
 	return n;
 }
 
-int MsvTeleop::sendPacketBPT (const int& verbose, std::vector<uint8_t>& buffer) 
-{
-	int k = 0;
-	uint8_t rl = buffer.size() + 1;
-	
-	uint8_t* buf = buffer.data();
-	*(buf+rl-1) = 0xFF;
-	
-	bpt.clearPort();
-	k = bpt.writePort(buf,rl);
-	usleep (rl * 10);
-	
-	if (verbose) {
-		for (int j = 0; j < rl; j++) {
-			printf("%X ", buffer[j]);
-		}
-		printf("\n");
-	}
-	
-	return k;
-}
-
 int MsvTeleop::sendPacketBPT (const int& verbose) 
 {
 	int k = 0;
@@ -234,13 +387,46 @@ int MsvTeleop::sendPacketBPT (const int& verbose)
 	k = bpt.writePort(buf,rl);
 	usleep (rl * 10);
 	
+	if (k != rl) {
+		return -1;
+	}
+	
 	if (verbose) {
-		for (int j = 0; j < rl; j++) {
+		for (int j = 0; j < rl-1; j++) {
 			printf("%X ", master.request.frame[j]);
 		}
 		printf("\n");
 	}
 	
 	return k;
+}
+
+void MsvTeleop::printQuery () 
+{
+	for (int i = 0; i < master.request.length; i++) {
+		printf("%X ", master.request.frame[i]);
+	}
+	printf("\n");
+}
+
+void MsvTeleop::printRegs () 
+{
+	for (int i = 0; i < iregs.size(); i++) {
+		printf("%X ", iregs[i]);
+	}
+	printf("\n");
+}
+
+void MsvTeleop::printCoils () 
+{
+	for (int i = 0; i < rcoils.size(); i++) {
+		printf("%X ", rcoils[i]);
+	}
+	printf("\n");
+}
+
+void MsvTeleop::close () 
+{
+	bpt.closePort();
 }
 

@@ -44,8 +44,6 @@
 /// please see https://github.com/Jacajack/liblightmodbus.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#define VERBOSITY							0
-
 #include <msv_main/msv_main.h>
 #include <boost/asio.hpp>
 
@@ -53,16 +51,11 @@ int main (int argc, char **argv)
 {
 	//Initialize ROS
 	ros::init(argc, argv, "msv_main");
-	ros::NodeHandle priv_nh("~");
-	
-	int verbosity_;
-	
-	priv_nh.param("verbosity", verbosity_, VERBOSITY);
 	
 	try {
 		//Create an object of class MsvMain that will do the job
 		MsvMain *robot;
-		MsvMain msv01(verbosity_);
+		MsvMain msv01;
 		robot = &msv01;
 		
 		ros::Rate loop_rate(10);

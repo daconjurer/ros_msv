@@ -51,69 +51,37 @@
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
 #include <stdio.h>
-#include <time.h>
 #include <inttypes.h>
-#include <std_msgs/MultiArrayDimension.h>
-#include <std_msgs/UInt8MultiArray.h>
-
-#include <lightmodbus/lightmodbus.h>
-#include <lightmodbus/master.h>
-#include <lightmodbus/slave.h>
 
 class MsvMain
 {
 	private:
-		// lightmodbus Master configuration struct
-		ModbusMaster master;
-		// For Master Exit code
-		uint8_t mec;
-		
-		// Modbus registers and coils
-		std::vector<uint16_t> hregs = std::vector<uint16_t> (4);
-		std::vector<uint8_t> coils = std::vector<uint8_t> (1);
-		
-		// Arrays to be published
-		std_msgs::UInt8MultiArray bpt_preset_hregs;
-		std_msgs::UInt8MultiArray bpt_forced_coils;
-		
-		// MSV-01 robot main nodes
 		ros::NodeHandle n_main;
+		// MSV-01 robot main publishers
 		ros::Publisher pub_state;
 		ros::Publisher pub_mode;
 		ros::Publisher pub_power;
 		ros::Publisher pub_vel;
-		ros::Publisher pub_coils;
-		ros::Publisher pub_regs;
-		
 		// Joy node subscriber
 		ros::Subscriber sub_joy;
 		
-		// Verbosity and traction power attributes
-		int verbosity;
+		// Traction power
 		int power;
-		
 		// Buttons memories
 		int l, a, f, s;
 		int sel;
-		
-		int send;
-		
+		// Twist message publish flag
+		int pub_flag;
 		// Buttons indexes
 		int linear, angular, up, down;
-		
 		// Robot modes
 		int mode, turn_mode;
 		
 		// Joy node callback
 		void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
 		
-		// For Modbus/Serial debugging
-		void printQuery ();
-		void printRegs ();
-		void printCoils ();
-		
 	public:
-		MsvMain (const int& verb);
+		MsvMain ();
 		virtual ~MsvMain () {}
 		
 };// End of class MsvMain

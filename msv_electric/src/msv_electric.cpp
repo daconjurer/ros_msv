@@ -51,7 +51,7 @@
 /* PENDING: */
 // Read the keyboard to turn LEDs on and off
 
-MsvElectric::MsvElectric (const int& verb)
+MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb) : bps(port,baudrate) 
 {
 	ROS_INFO("SETTING ELECTRIC NODE UP...");
 	
@@ -102,7 +102,7 @@ void MsvElectric::senseMSV ()
 {
 	if (verbosity == 1) {
 		/* Coils request frame building */
-		modbusBuildRequest15(&master,1,7,4,coils.data());
+		modbusBuildRequest15(&master,2,7,4,coils.data());
 		//ROS_INFO("BPS COILS QUERY:");
 		//printQuery();
 		
@@ -118,14 +118,14 @@ void MsvElectric::senseMSV ()
 		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
-		modbusBuildRequest03(&master,1,0,11);
+		modbusBuildRequest03(&master,2,0,11);
 		
 		// Send request
 		//sendPacketBPS(1);
 		sendreceivePacketBPS(1,27);
 	} else {
 		/* Coils frame request frame building */
-		modbusBuildRequest15(&master,1,7,4,coils.data());
+		modbusBuildRequest15(&master,2,7,4,coils.data());
 		
 		// Send request
 		//sendPacketBPS(0);
@@ -139,7 +139,7 @@ void MsvElectric::senseMSV ()
 		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
-		modbusBuildRequest03(&master,1,0,11);
+		modbusBuildRequest03(&master,2,0,11);
 		
 		// Send request
 		//sendPacketBPS(0);
@@ -218,8 +218,12 @@ int MsvElectric::sendPacketBPS (const int& verbose)
 	k = bps.writePort(buf,rl);
 	usleep (rl * 10);
 	
+	if (k != rl) {
+		return -1;
+	}
+	
 	if (verbose) {
-		for (int j = 0; j < rl; j++) {
+		for (int j = 0; j < rl-1; j++) {
 			printf("%X ", master.request.frame[j]);
 		}
 		printf("\n");
