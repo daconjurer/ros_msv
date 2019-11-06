@@ -55,6 +55,9 @@ MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb
 {
 	ROS_INFO("SETTING ELECTRIC NODE UP...");
 	
+	// Joy controller topic (for LEDs control through functions buttons)
+	sub_joy = n_electric.subscribe("joy", 1, &MsvElectric::joyCallback, this);
+	
 	// Modbus sensing system coils topic (published all the time)
 	pub_coils = n_electric.advertise<std_msgs::UInt8MultiArray>("msv/ss_coils", 10);
 	// Modbus sensing system holding regs topic (published all the time)
@@ -96,6 +99,72 @@ MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb
 	}
 	sensors_msg.header.frame_id = "msv_sensors";
 	sensors_msg.values.reserve(11);
+}
+
+// Joy callback method
+void MsvElectric::joyCallback (const sensor_msgs::Joy::ConstPtr& joy) 
+{
+	int pub_flag = 0;
+	int triangle, circle, cross, square;
+	uint8_t start = coils[0];
+	
+	triangle = joy->buttons[TRIANGLE_BUTTON];
+	circle = joy->buttons[CIRCLE_BUTTON];
+	cross = joy->buttons[CROSS_BUTTON];
+	square = joy->buttons[SQUARE_BUTTON];
+	
+	if (triangle) {
+		pub_flag = 1;
+		if (start & 0x01) {
+			start &= ~(0x01);
+			ROS_INFO("LED 1 OFF");
+		} else {
+			start |= 0x01;
+			ROS_INFO("LED 1 ON");
+		}
+	}
+	
+	if (circle) {
+		pub_flag = 1;
+		if (start & 0x02) {
+			start &= ~(0x02);
+			ROS_INFO("LED 2 OFF");
+		} else {
+			start |= 0x02;
+			ROS_INFO("LED 2 ON");
+		}
+	}
+	
+	if (cross) {
+		pub_flag = 1;
+		if (start & 0x04) {
+			start &= ~(0x04);
+			ROS_INFO("LED 3 OFF");
+		} else {
+			start |= 0x04;
+			ROS_INFO("LED 3 ON");
+		}
+	}
+	
+	if (square) {
+		pub_flag = 1;
+		if (start & 0x08) {
+			start &= ~(0x08);
+			ROS_INFO("LED 4 OFF");
+		} else {
+			start |= 0x08;
+			ROS_INFO("LED 4 ON");
+		}
+	}
+	
+	/*
+	// Debug
+	if (pub_flag) {
+		ROS_INFO("%X", start);
+	}
+	*/
+	
+	coils[0] = start;
 }
 
 void MsvElectric::senseMSV ()
