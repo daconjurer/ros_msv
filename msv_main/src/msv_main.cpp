@@ -64,6 +64,7 @@ MsvMain::MsvMain ()
 	pub_power = n_main.advertise<std_msgs::UInt8>("msv/power", 1);
 	// Twist topic (published every time the cmd_vel of the robot changes)
 	pub_vel = n_main.advertise<geometry_msgs::Twist>("msv/cmd_vel", 10);
+	
 	// Max traction power
 	power = 89;
 	

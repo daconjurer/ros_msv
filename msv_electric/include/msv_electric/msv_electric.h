@@ -47,8 +47,8 @@
 #include <ros/ros.h>
 #include <msv_main/port_handler.h>
 #include <std_msgs/String.h>
+#include <sensor_msgs/Joy.h>
 #include <stdio.h>
-#include <time.h>
 #include <inttypes.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <std_msgs/UInt8MultiArray.h>
@@ -83,10 +83,21 @@ class MsvElectric
 		ros::Publisher pub_coils;
 		ros::Publisher pub_regs;
 		ros::Publisher pub_sensors;
+		// Joy node subscriber
+		ros::Subscriber sub_joy;
 		
 		int verbosity;
 		
+		// Functions buttons keys
+		const int TRIANGLE_BUTTON = 0;
+		const int CIRCLE_BUTTON = 1;
+		const int CROSS_BUTTON = 2;
+		const int SQUARE_BUTTON = 3;
+		
 		std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
+		
+		// Joy node callback
+		void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
 		
 		// Communication methods for the sensors port
 		int sendreceivePacketBPS (const int& verbose, const int& ack_length);
