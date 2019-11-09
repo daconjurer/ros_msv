@@ -39,12 +39,12 @@
 
 using namespace msv;
 
-// Constructor
+// Constructors
 PortHandler::PortHandler () 
 {
 	port_name_ = (char*)"/dev/ttyUSB0";
 	socket_fd_ = -1;
-	setBaudRate(115200);
+	setBaudRate(DEFAULT_BAUDRATE);
 }
 
 PortHandler::PortHandler (char* const portname, const int& baudrate) 

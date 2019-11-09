@@ -36,6 +36,7 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE.md](L
 
 ## Acknowledgments
 
-* The *teleop* part is based on the *rescue* ROS 1 package from José Armando Sanchez Rojas.
+* Both *msv_electric* and *msv_teleop* packages use the Modbus library liblightmodbus from **Jacek Wieczorek**.
+* The *teleop* part is based on the *rescue* ROS 1 package from **José Armando Sanchez Rojas**.
 
 

@@ -67,10 +67,10 @@ class PortHandler
 		int setInterfaceAttribs (const int& fd, const int& baudrate, const int& parity);
 		int setInterfaceAttribsArduino (const int& fd, const int& baudrate, const int& parity);
 		
-	public:
 		// Default Baudrate
 		const int DEFAULT_BAUDRATE = 115200;
 		
+	public:
 		// Constructors
 		PortHandler ();
 		PortHandler (char* portname, const int& baudrate);
@@ -78,38 +78,38 @@ class PortHandler
 		virtual ~PortHandler() { }
 		
 		// Opens the serial port
-		bool openPort();
-		bool openPortArduino();
+		bool openPort ();
+		bool openPortArduino ();
 		
 		// Closes the serial port
-		void closePort();
+		void closePort ();
 		
-		// Clears the port
-		void clearPort();
+		// Clears up the port
+		void clearPort ();
 		
 		// Sets the name of the port
-		void setPortName(char* port_name);
+		void setPortName (char* port_name);
 		
 		// Gets the name of the port
-		char *getPortName ();
+		char* getPortName ();
 		
 		// Sets the baudrate of the port
-		int setBaudRate(const int& baudrate);
+		int setBaudRate (const int& baudrate);
 		
 		// Gets the number of bits available for reading from the port buffer
-		int getBytesAvailable();
+		int getBytesAvailable ();
 		
 		// Reads buffer from port
-		int readPort(uint8_t* packet, const int& length);
+		int readPort (uint8_t* packet, const int& length);
 		
 		// Reads byte from port
-		int readPort(uint8_t* byte);
+		int readPort (uint8_t* byte);
 		
 		// Writes buffer to port
-		int writePort(uint8_t* packet, const int& length);
+		int writePort (uint8_t* packet, const int& length);
 		
 		// Writes byte to port
-		int writePort(uint8_t* byte);
+		int writePort (uint8_t* byte);
 };
 
 }

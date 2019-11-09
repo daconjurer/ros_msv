@@ -56,6 +56,9 @@
 #define DXL_ARM								11	// Dynamixel ID: 11
 
 #define NUM_SERVOS						4		// Number of servos (must be at least 3, ideally)
+# if !defined(NUM_SERVOS)
+	#define NUM_SERVOS					3
+#endif
 #define RGBD_SERVOS						3		// Number of servos for RGBD system
 
 #define OCMD_INIT_LENGTH	4
@@ -321,6 +324,11 @@ int MsvDxl::initOCMD ()
 	return 0;
 }
 
+int MsvDxl::initAngles ()
+{
+	//raw_angles
+}
+
 int MsvDxl::sendreceivePacketOCMD (const int& verbose, const int& ack_length) 
 {
 	int n, k, ack_count1 = 0, ack_count2 = 0, ack_count3 = 0;
@@ -463,7 +471,7 @@ int MsvDxl::sendPacketOCMD (const int& verbose)
 	ocmd.clearPort();
 	k = ocmd.writePort(raw_angles.data(),OCMD_DATA_LENGTH);
 	usleep (OCMD_DATA_LENGTH * 10);
-
+	
 	if (verbose) {
 		for (int j = 0; j < OCMD_DATA_LENGTH; j++) {
 			printf("%X ", raw_angles[j]);
