@@ -123,6 +123,7 @@ class MsvDxl
 		void modeCallback (const std_msgs::String::ConstPtr& mode);
 		
 		int initOCMD ();
+		int initAngles ();
 		
 		// Communication methods for the sensors port
 		int sendreceivePacketOCMD (const int& verbose, const int& ack_length);
