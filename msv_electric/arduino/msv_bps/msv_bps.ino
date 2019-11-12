@@ -94,14 +94,14 @@
 
 /** MEMORY TABLE **/
 // Refer to the README file for further details
-static uint8_t coils[NUM_FORCED_COILS] = {0};		// LEDs
-static uint16_t iregs[NUM_READ_IREGS] = {0};		// Electric sensors + CO2 (9 + 2) 
-static uint8_t addresses[NUM_ADDRESSES] = {0};	// coils + regs addresses
+static uint8_t coils[NUM_FORCED_COILS] = {0};   // LEDs
+static uint16_t iregs[NUM_READ_IREGS] = {0};    // Electric sensors + CO2 (9 + 2) 
+static uint8_t addresses[NUM_ADDRESSES] = {0};  // coils + regs addresses
 
 // Modbus buffers
-static uint8_t request[10] = {0};		/// For request reading
-static uint8_t iregs_response[READ_IREGS_RESPONSE_LENGTH] = {0};	// For input regs response command
-static uint8_t coils_response[FORCE_COILS_RESPONSE_LENGTH] = {0};	// For coils response command
+static uint8_t request[10] = {0};                                 /// For request reading
+static uint8_t iregs_response[READ_IREGS_RESPONSE_LENGTH] = {0};  // For input regs response command
+static uint8_t coils_response[FORCE_COILS_RESPONSE_LENGTH] = {0}; // For coils response command
 
 // MSPS buffer
 static uint8_t data[8] = {0};
@@ -149,9 +149,9 @@ static int I_BL2 = PB0;
 static int I_BL1 = PB1;
 
 // Serial communication variables
-static uint8_t i_obc = 0;					// Incoming bytes counter (communication between BPS and OBC)
-static uint8_t obc_buffer = 0;		// Byte buffer for Serial2 (communication between BPS and OBC)
-static uint8_t msps_buffer = 0;		// Byte buffer for Serial (communication between BPS and MSPS)
+static uint8_t i_obc = 0;         // Incoming bytes counter (communication between BPS and OBC)
+static uint8_t obc_buffer = 0;    // Byte buffer for Serial2 (communication between BPS and OBC)
+static uint8_t msps_buffer = 0;   // Byte buffer for Serial (communication between BPS and MSPS)
 
 // This function generates the CRC for the Modbus responses
 uint16_t ModbusCRC (uint8_t buf, uint16_t crc)
@@ -160,13 +160,13 @@ uint16_t ModbusCRC (uint8_t buf, uint16_t crc)
 	crc ^= (uint16_t)buf;
 	
 	// Each bit loop
-	for (int i = 8; i != 0; i--) {    
+	for (int i = 8; i != 0; i--) {
 		if ((crc & 0x0001) != 0) {
 			crc >>= 1;
 			crc ^= 0xA001;
 		} else crc >>= 1;
 	}
-	return crc; 
+	return crc;
 }
 
 // Called within the setup () Arduino method
@@ -365,16 +365,16 @@ void sendACK (uint8_t len)
 {
 	uint16_t crc = 0xFFFF;
 	
-	if (len == FORCE_COILS_REQUEST_LENGTH) 
+	if (len == FORCE_COILS_REQUEST_LENGTH)
 	{
 		// Send the response
 		for (int j = 0; j < FORCE_COILS_RESPONSE_LENGTH; j++) {
-			Serial2.write(coils_response[j]); 
+			Serial2.write(coils_response[j]);
 		}
 		return;
 	}
 	
-	if (len == READ_IREGS_REQUEST_LENGTH) 
+	if (len == READ_IREGS_REQUEST_LENGTH)
 	{
 		// Fill up the input registers response array data
 		iregs_response[3] = (unsigned char)(iregs[0] >> 8);
@@ -411,7 +411,7 @@ void sendACK (uint8_t len)
 		
 		// Send the response (read input registers)
 		for (int j = 0; j < READ_IREGS_RESPONSE_LENGTH; j++) {
-			Serial2.write(iregs_response[j]); 
+			Serial2.write(iregs_response[j]);
 		}
 		return;
 	}
