@@ -89,17 +89,17 @@
 
 /** MEMORY TABLE **/
 // Refer to the README file for further details
-static uint8_t coils[NUM_COILS] = {0};					// Drivers logic inputs + alarms
-static uint16_t hregs[NUM_PRESET_HREGS] = {0};	// Drivers PWM values (speed)
-static uint16_t iregs[NUM_READ_IREGS] = {0};		// Drivers speed signals (rpms)
-static uint8_t addresses[15] = {0};							// coils + regs addresses
+static uint8_t coils[NUM_COILS] = {0};          // Drivers logic inputs + alarms
+static uint16_t hregs[NUM_PRESET_HREGS] = {0};  // Drivers PWM values (speed)
+static uint16_t iregs[NUM_READ_IREGS] = {0};    // Drivers speed signals (rpms)
+static uint8_t addresses[15] = {0};             // coils + regs addresses
 
 // Modbus buffers
 static uint8_t request[10] = {0};
-static uint8_t hregs_response[PRESET_HREGS_RESPONSE_LENGTH] = {0};  // For holding regs presetting response command
+static uint8_t hregs_response[PRESET_HREGS_RESPONSE_LENGTH] = {0};       // For holding regs presetting response command
 static uint8_t force_coils_response[FORCE_COILS_RESPONSE_LENGTH] = {0};  // For coils forcing response command
-static uint8_t iregs_response[READ_IREGS_RESPONSE_LENGTH] = {0};  // For input regs reading response command
-static uint8_t read_coils_response[READ_COILS_RESPONSE_LENGTH] = {0}; // For coils reading response command
+static uint8_t iregs_response[READ_IREGS_RESPONSE_LENGTH] = {0};         // For input regs reading response command
+static uint8_t read_coils_response[READ_COILS_RESPONSE_LENGTH] = {0};    // For coils reading response command
 
 /* Driver control signals (Logic & PWM) */
 
@@ -130,14 +130,14 @@ static int ALM1 = PB13;
 static int ALM2 = PA12;
 
 // Serial communication variables
-static uint8_t i_obc = 0;				// Incoming bytes counter (communication between BPT and OBC)
-static uint8_t obc_buffer = 0;	// Byte buffer for Serial (communication between BPT and OBC)
+static uint8_t i_obc = 0;       // Incoming bytes counter (communication between BPT and OBC)
+static uint8_t obc_buffer = 0;  // Byte buffer for Serial (communication between BPT and OBC)
 
 // Interruption handling variables (PWM reading pin states)
-volatile int input_state = 0;										// Current state of the pin
-volatile uint16_t before_start_time[6] = {0};		// Previous time (rising edge instant)
-volatile uint16_t start_time[6] = {0};					// Current time (next rising edge instant)
-volatile uint16_t period[6] = {0};							// Period of signal
+volatile int input_state = 0;                   // Current state of the pin
+volatile uint16_t before_start_time[6] = {0};   // Previous time (rising edge instant)
+volatile uint16_t start_time[6] = {0};          // Current time (next rising edge instant)
+volatile uint16_t period[6] = {0};              // Period of signal
 
 uint16_t ModbusCRC (uint8_t buf, uint16_t crc)
 {
@@ -145,13 +145,13 @@ uint16_t ModbusCRC (uint8_t buf, uint16_t crc)
 	crc ^= (uint16_t)buf;
 	
 	// Each bit loop
-	for (int i = 8; i != 0; i--) {    
+	for (int i = 8; i != 0; i--) {
 		if ((crc & 0x0001) != 0) {
 			crc >>= 1;
 			crc ^= 0xA001;
 		} else crc >>= 1;
 	}
-	return crc; 
+	return crc;
 }
 
 // Called within the setup () Arduino method
@@ -360,7 +360,7 @@ void sendACK (uint8_t len)
 	if (len == FORCE_COILS_REQUEST_LENGTH) {
 		// Send the response (forced coils registers)
 		for (int j = 0; j < FORCE_COILS_RESPONSE_LENGTH; j++) {
-			Serial.write(force_coils_response[j]); 
+			Serial.write(force_coils_response[j]);
 		}
 		return;
 	}
@@ -368,7 +368,7 @@ void sendACK (uint8_t len)
 	if (len == PRESET_HREGS_REQUEST_LENGTH) {
 		// Send the response (holding registers)
 		for (int j = 0; j < PRESET_HREGS_RESPONSE_LENGTH; j++) {
-			Serial.write(hregs_response[j]); 
+			Serial.write(hregs_response[j]);
 		}
 		return;
 	}
@@ -424,7 +424,7 @@ void sendACK (uint8_t len)
 		
 		// Send the response (input registers)
 		for (int j = 0; j < READ_IREGS_RESPONSE_LENGTH; j++) {
-			Serial.write(iregs_response[j]); 
+			Serial.write(iregs_response[j]);
 		}
 		return;
 	}
@@ -528,7 +528,7 @@ void getBBPeriod ()
 }
 
 // Gets the period of signal Speed1
-void getSpeed1Period () 
+void getSpeed1Period ()
 {
 	// Read the input pin:
 	input_state = digitalRead(SPEED1);
