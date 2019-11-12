@@ -46,13 +46,13 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // These defs should match the ones in the msv_bpt skecth
-#define START_MSPS          0x01		// Start up instruction
-#define START_COM           0x02		// Communication start instruction
-#define STOP_COM            0x03		// Communication stop instruction
-#define SEND_MSPS_DATA      0x04		// Message sending instruction
-#define MSPS_READY          0x11		// MSPS ready ACK
-#define COM_STARTED         0x12		// COM enabled ACK
-#define COM_STOPPED         0x13		// COM disabled ACK
+#define START_MSPS          0x01 // Start up instruction
+#define START_COM           0x02 // Communication start instruction
+#define STOP_COM            0x03 // Communication stop instruction
+#define SEND_MSPS_DATA      0x04 // Message sending instruction
+#define MSPS_READY          0x11 // MSPS ready ACK
+#define COM_STARTED         0x12 // COM enabled ACK
+#define COM_STOPPED         0x13 // COM disabled ACK
 
 /* TODO */
 
@@ -67,9 +67,9 @@ static unsigned short ch3 = 0;
 static unsigned short ch4 = 0;
 
 // Serial communication variables
-static unsigned char data[8] = {0};		// Data buffer (message to be sent to BPS)
-static unsigned char b = 0;						// Byte buffer
-static unsigned int start = 0;				// Routine enabling flag
+static unsigned char data[8] = {0};  // Data buffer (message to be sent to BPS)
+static unsigned char b = 0;          // Byte buffer
+static unsigned int start = 0;       // Routine enabling flag
 
 void setup () {
 	// Buffers for starting up the MSPS board

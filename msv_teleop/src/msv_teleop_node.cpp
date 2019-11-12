@@ -43,9 +43,9 @@
 /// Based on the "rescue" ROS metapackage from José Armando Sánchez-Rojas.
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#define PORT_NAME								"/dev/ttyUSB0"
-#define BAUDRATE								115200
-#define VERBOSITY								0
+#define PORT_NAME               "/dev/ttyUSB0"
+#define BAUDRATE                115200
+#define VERBOSITY               0
 
 #include <msv_teleop/msv_teleop.h>
 #include <boost/asio.hpp>

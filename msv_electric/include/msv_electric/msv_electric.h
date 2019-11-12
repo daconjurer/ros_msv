@@ -56,7 +56,6 @@
 
 #include <lightmodbus/lightmodbus.h>
 #include <lightmodbus/master.h>
-#include <lightmodbus/slave.h>
 
 class MsvElectric
 {

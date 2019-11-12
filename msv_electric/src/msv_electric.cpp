@@ -48,8 +48,7 @@
 
 #include <msv_electric/msv_electric.h>
 
-/* PENDING: */
-// Read the keyboard to turn LEDs on and off
+/* TODO */
 
 MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb) : bps(port,baudrate) 
 {

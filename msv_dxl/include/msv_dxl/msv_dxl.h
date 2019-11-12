@@ -43,36 +43,36 @@
 #define MSV_DXL_H_
 
 // Serial communication definitions
-#define OCMD_START								0x10
-#define OCMD_SETUP								0x20
-#define OCMD_INIT									0x30
-#define OCMD_READY								0x31
+#define OCMD_START                0x10
+#define OCMD_SETUP                0x20
+#define OCMD_INIT                 0x30
+#define OCMD_READY                0x31
 
-#define DXL_PORT_READY						0x70
-#define DXL_BAUDRATE_READY				0x71
+#define DXL_PORT_READY            0x70
+#define DXL_BAUDRATE_READY        0x71
 
-#define DXL_PORT_ERROR						0x80
-#define DXL_BAUDRATE_ERROR				0x81
+#define DXL_PORT_ERROR            0x80
+#define DXL_BAUDRATE_ERROR        0x81
 
 // Dynamixel PacketHandler error definitions
-#define PH_SUCCESS								0x90  // Tx/Rx packet communication success
-#define PH_PORT_BUSY							0x91  // Port is busy (in use)
-#define PH_TX_FAIL								0x92  // Failed transmit instruction packet
-#define PH_RX_FAIL								0x93  // Failed get status packet
-#define PH_TX_ERROR								0x94  // Incorrect instruction packet
-#define PH_RX_WAITING							0x95  // Now recieving status packet
-#define PH_RX_TIMEOUT							0x96  // There is no status packet
-#define PH_RX_CORRUPT							0x97  // Incorrect status packet
-#define PH_NOT_AVAILABLE					0x98  // Port not available
+#define PH_SUCCESS                0x90  // Tx/Rx packet communication success
+#define PH_PORT_BUSY              0x91  // Port is busy (in use)
+#define PH_TX_FAIL                0x92  // Failed transmit instruction packet
+#define PH_RX_FAIL                0x93  // Failed get status packet
+#define PH_TX_ERROR               0x94  // Incorrect instruction packet
+#define PH_RX_WAITING             0x95  // Now recieving status packet
+#define PH_RX_TIMEOUT             0x96  // There is no status packet
+#define PH_RX_CORRUPT             0x97  // Incorrect status packet
+#define PH_NOT_AVAILABLE          0x98  // Port not available
 
-#define DXL_SUCCESS								0xA0
-#define DXL_VOLTAGE								0xA1
-#define DXL_ANGLE									0xA2
-#define DXL_OVERHEAT							0xA3
-#define DXL_RANGE									0xA4
-#define DXL_CHECKSUM							0xA5
-#define DXL_OVERLOAD							0xA6
-#define DXL_INSTRUCTION						0xA7
+#define DXL_SUCCESS               0xA0
+#define DXL_VOLTAGE               0xA1
+#define DXL_ANGLE                 0xA2
+#define DXL_OVERHEAT              0xA3
+#define DXL_RANGE                 0xA4
+#define DXL_CHECKSUM              0xA5
+#define DXL_OVERLOAD              0xA6
+#define DXL_INSTRUCTION           0xA7
 
 #include <ros/ros.h>
 #include <msv_main/port_handler.h>

@@ -50,22 +50,22 @@
 
 #include <msv_dxl/msv_dxl.h>
 
-#define DXL_PITCH							12	// Dynamixel ID: 12
-#define DXL_YAW								14	// Dynamixel ID: 14
-#define DXL_ROLL							10	// Dynamixel ID: 10
-#define DXL_ARM								11	// Dynamixel ID: 11
+#define DXL_PITCH             12 // Dynamixel ID: 12
+#define DXL_YAW               14 // Dynamixel ID: 14
+#define DXL_ROLL              10 // Dynamixel ID: 10
+#define DXL_ARM               11 // Dynamixel ID: 11
 
-#define NUM_SERVOS						4		// Number of servos (must be at least 3, ideally)
+#define NUM_SERVOS            4  // Number of servos (must be at least 3, ideally)
 # if !defined(NUM_SERVOS)
-	#define NUM_SERVOS					3
+	#define NUM_SERVOS          3
 #endif
-#define RGBD_SERVOS						3		// Number of servos for RGBD system
+#define RGBD_SERVOS           3  // Number of servos for RGBD system
 
-#define OCMD_INIT_LENGTH	4
+#define OCMD_INIT_LENGTH      4
 
 #ifdef NUM_SERVOS
-	#define OCMD_DATA_LENGTH		(2*NUM_SERVOS + 2)	// OCMD_DATA_LENGTH = (no. of servos*2)+2
-	#define OCMD_SETUP_LENGTH		OCMD_DATA_LENGTH
+	#define OCMD_DATA_LENGTH    (2*NUM_SERVOS + 2)	// OCMD_DATA_LENGTH = (no. of servos*2)+2
+	#define OCMD_SETUP_LENGTH   OCMD_DATA_LENGTH
 #endif
 
 MsvDxl::MsvDxl (char* const port, const int& baudrate, const int& verb) : ocmd(port,baudrate) 
