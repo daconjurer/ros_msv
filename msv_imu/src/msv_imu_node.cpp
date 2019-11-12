@@ -43,31 +43,31 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // Serial device port name
-#define PORT_NAME								"/dev/ttyUSB0"
-#define BAUDRATE								115200
+#define PORT_NAME               "/dev/ttyUSB0"
+#define BAUDRATE                115200
 
 // DMP error definitions
-#define INITMEMLOAD_ERROR				0x71
-#define DMPCONFUPDATE_ERROR			0x72
-#define OVERFLOW_ERROR					0x73
+#define INITMEMLOAD_ERROR       0x71
+#define DMPCONFUPDATE_ERROR     0x72
+#define OVERFLOW_ERROR          0x73
 
 // Serial communication definitions
-#define IMU_INIT								0x01
-#define IMU_TEST								0x02
-#define IMU_TEST_SUCC						0x50
-#define IMU_TEST_FAIL						0x51
+#define IMU_INIT                0x01
+#define IMU_TEST                0x02
+#define IMU_TEST_SUCC           0x50
+#define IMU_TEST_FAIL           0x51
 
-#define DMP_INIT								0x60
-#define DMP_ENABLE							0x61
-#define INT_ENABLE							0x62
-#define DMP_READY								0x63
+#define DMP_INIT                0x60
+#define DMP_ENABLE              0x61
+#define INT_ENABLE              0x62
+#define DMP_READY               0x63
 
-#define COM_START								0x0A
-#define COM_STOP								0x0B
-#define OBC_START								0x10
-#define ARDI_READY							0x20
-#define SEND_ARDI_DATA					0x30
-#define EOQ											0xFF
+#define COM_START               0x0A
+#define COM_STOP                0x0B
+#define OBC_START               0x10
+#define ARDI_READY              0x20
+#define SEND_ARDI_DATA          0x30
+#define EOQ                     0xFF
 
 #include <ros/ros.h>
 #include <msv_main/port_handler.h>
