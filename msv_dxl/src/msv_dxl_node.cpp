@@ -40,9 +40,9 @@
 ///
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#define PORT_NAME								"/dev/ttyACM0"
-#define BAUDRATE								115200
-#define VERBOSITY								0
+#define PORT_NAME               "/dev/ttyACM0"
+#define BAUDRATE                115200
+#define VERBOSITY               0
 
 #include <msv_dxl/msv_dxl.h>
 #include <boost/asio.hpp>

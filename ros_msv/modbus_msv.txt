@@ -69,13 +69,13 @@ p_dc1       40003
 p_dc2       40004
 
 --Coils--
-fr_bl1      1		// force
-fr_bl2      2		// force
-dir_dc1     3		// force
-dir_dc2     4		// force
-moving      5		// force
-alm_bl1     6		// read
-alm_bl2     7		// read
+fr_bl1      1   // force
+fr_bl2      2   // force
+dir_dc1     3   // force
+dir_dc2     4   // force
+moving      5   // force
+alm_bl1     6   // read
+alm_bl2     7   // read
 
 led1        8
 led2        9

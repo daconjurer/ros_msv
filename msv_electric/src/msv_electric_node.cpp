@@ -40,9 +40,9 @@
 ///
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#define PORT_NAME								"/dev/ttyUSB0"
-#define BAUDRATE								115200
-#define VERBOSITY								0
+#define PORT_NAME               "/dev/ttyUSB0"
+#define BAUDRATE                115200
+#define VERBOSITY               0
 
 #include <msv_electric/msv_electric.h>
 #include <boost/asio.hpp>
