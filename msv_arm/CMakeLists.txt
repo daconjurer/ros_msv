@@ -22,7 +22,7 @@ catkin_package(
 )
 
 add_executable(msv_arm src/msv_arm.cpp
-									src/msv_arm_node.cpp)
-									
+	src/msv_arm_node.cpp)
+
 target_link_libraries(msv_arm ${catkin_LIBRARIES} hklx_linux_x86)
 

@@ -11,22 +11,22 @@ find_package(Boost REQUIRED COMPONENTS system)
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
 include_directories(
-  include
-  ${Boost_INCLUDE_DIRS}
-  /usr/include/lightmodbus
-  ${catkin_INCLUDE_DIRS}
-  ${msv_main_INCLUDE_DIRS}
+	include
+	${Boost_INCLUDE_DIRS}
+	/usr/include/lightmodbus
+	${catkin_INCLUDE_DIRS}
+	${msv_main_INCLUDE_DIRS}
 )
 
 ## Declare a catkin package
 catkin_package(
 	INCLUDE_DIRS include
-  LIBRARIES
-  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs
+	LIBRARIES
+	CATKIN_DEPENDS message_runtime roscpp rospy std_msgs
 )
 
 add_executable(msv_teleop src/msv_teleop.cpp
-									src/msv_teleop_node.cpp)
+	src/msv_teleop_node.cpp)
 
 target_link_libraries(msv_teleop ${catkin_LIBRARIES} msv_porthandler lightmodbus)
 
