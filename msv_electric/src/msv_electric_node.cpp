@@ -72,7 +72,7 @@ int main (int argc, char **argv)
 		while (ros::ok()) {
 			ros::spinOnce();
 			loop_rate.sleep();
-			//electric->senseMSV();
+			electric->senseMSV();
 		}
 		electric->close();
 		return 0;

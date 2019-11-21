@@ -121,15 +121,13 @@ class MsvTeleop
 		void readInputRegisters ();
 		
 		// Communication methods for the controller port
-		int sendreceivePacketBPT (const int& verbose, const int& ack_length);
+		int sendreceivePacketBPT (const int& ack_length, const int& verbose);
 		
 		// For debug purposes
 		int sendPacketBPT (const int& verbose);
 		
 		// For Modbus/Serial debugging
 		void printQuery ();
-		void printRegs ();
-		void printCoils ();
 		
 	public:
 		MsvTeleop (char* port, const int& baudrate, const int& verb);
