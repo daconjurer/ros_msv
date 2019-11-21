@@ -98,6 +98,8 @@ MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb
 	}
 	sensors_msg.header.frame_id = "msv_sensors";
 	sensors_msg.values.reserve(11);
+	
+	ROS_INFO("MSV_ELECTRIC READY");
 }
 
 // Joy callback method
@@ -170,7 +172,7 @@ void MsvElectric::senseMSV ()
 {
 	if (verbosity == 1) {
 		/* Coils request frame building */
-		modbusBuildRequest15(&master,2,7,4,coils.data());
+		modbusBuildRequest15(&master,1,7,4,coils.data());
 		//ROS_INFO("BPS COILS QUERY:");
 		//printQuery();
 		
@@ -186,14 +188,14 @@ void MsvElectric::senseMSV ()
 		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
-		modbusBuildRequest03(&master,2,0,11);
+		modbusBuildRequest04(&master,1,0,11);
 		
 		// Send request
 		//sendPacketBPS(1);
 		sendreceivePacketBPS(1,27);
 	} else {
 		/* Coils frame request frame building */
-		modbusBuildRequest15(&master,2,7,4,coils.data());
+		modbusBuildRequest15(&master,1,7,4,coils.data());
 		
 		// Send request
 		//sendPacketBPS(0);
@@ -207,7 +209,7 @@ void MsvElectric::senseMSV ()
 		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
-		modbusBuildRequest03(&master,2,0,11);
+		modbusBuildRequest04(&master,1,0,11);
 		
 		// Send request
 		//sendPacketBPS(0);
@@ -235,7 +237,7 @@ int MsvElectric::sendreceivePacketBPS (const int& verbose, const int& ack_length
 {
 	uint8_t rl = master.request.length + 1;
 	ack_modbus.resize(ack_length);
-	int n, k, i;
+	int n, k;
 	
 	uint8_t* buf = master.request.frame;
 	*(buf+rl-1) = 0xFF;
@@ -246,12 +248,19 @@ int MsvElectric::sendreceivePacketBPS (const int& verbose, const int& ack_length
 	usleep ((rl + ack_length) * 12);
 	
 	// Receive response
-	for (i = 0; i < ack_length; i++) {
+	for (int i = 0; i < ack_length; i++) {
 		n = bps.readPort(&ack_modbus[i]);
 	}
 	
 	if (k != rl) {
 		return -1;
+	}
+	
+	if (verbose) {
+		for (int j = 0; j < ack_length; j++) {
+		printf("%X ", ack_modbus[j]);
+		}
+		printf("\n");
 	}
 	
 	master.response.length = ack_length;
@@ -260,15 +269,8 @@ int MsvElectric::sendreceivePacketBPS (const int& verbose, const int& ack_length
 	// Parse response using lightmodbus
 	mec = modbusParseResponse(&master);
 	if (mec != MODBUS_OK) {
-		ROS_ERROR("MODBUS RESPONSE IS NOT CORRECT");
+		ROS_ERROR("MODBUS RESPONSE IS NOT CORRECT (MEC %d)",mec);
 		return -2;
-	}
-	
-	if (verbose) {
-		for (int j = 0; j < ack_length; j++) {
-			printf("%X ", ack_modbus[j]);
-		}
-		printf("\n");
 	}
 	
 	return n;

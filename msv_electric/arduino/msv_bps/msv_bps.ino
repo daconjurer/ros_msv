@@ -153,7 +153,7 @@ static uint8_t i_obc = 0;         // Incoming bytes counter (communication betwe
 static uint8_t obc_buffer = 0;    // Byte buffer for Serial2 (communication between BPS and OBC)
 static uint8_t msps_buffer = 0;   // Byte buffer for Serial (communication between BPS and MSPS)
 
-// This function generates the CRC for the Modbus responses
+// Generates the CRC for the Modbus responses
 uint16_t ModbusCRC (uint8_t buf, uint16_t crc)
 {
 	// XOR byte to LSB of CRC
@@ -244,6 +244,7 @@ void standby ()
 	initMB();
 }
 
+// Initializes the response arrays with the info required in the Modbus protocol
 void initMB ()
 {
 	// Header fill up (input registers response)
@@ -255,7 +256,7 @@ void initMB ()
 	coils_response[0] = 0x01;
 	coils_response[1] = 0x0F;
 	coils_response[2] = 0x00;
-	coils_response[3] = 0x05;
+	coils_response[3] = 0x07;
 	coils_response[4] = 0x00;
 	coils_response[5] = 0x04;
 	
@@ -270,6 +271,7 @@ void initMB ()
 	coils_response[7] = (uint8_t)(crc >> 8);
 }
 
+// Performs the whole sensing routine (both MSPS and BPS boards)
 void sense ()
 {
 	// Clean up regs array (needed for filtering)
@@ -305,6 +307,7 @@ void sense ()
 	// End of mean filter
 }
 
+// Permforms the communication routine to acquire the sensing info from the board MSPS
 void getPowerSensing ()
 {
 	// Data counter
@@ -314,19 +317,23 @@ void getPowerSensing ()
 	Serial.write(SEND_MSPS_DATA);
 	
 	// Read the data
+	digitalWrite(LED_PIN,LOW);
 	do {
 		while (!Serial.available());
 		msps_buffer = Serial.read();
-		digitalWrite(LED_PIN,LOW);
+		// digitalWrite(LED_PIN,LOW);
 		data[power_i] = msps_buffer;
 		power_i++;
 	} while (power_i < MSPS_DATA_LENGTH);
+	
+	//digitalWrite(LED_PIN,HIGH);
 	
 	// Fill up the message with the sensors data
 	iregs[7] = (((uint16_t)data[1]) << 8) | (0x00FF & ((uint16_t)data[2]));
 	iregs[9] = (((uint16_t)data[5]) << 8) | (0x00FF & ((uint16_t)data[6]));
 }
 
+// Decodes the info from the Modbus message and maps it to the output pins
 void mapOutputs (unsigned int len)
 {
 	// Only the forcing coils request modifies the outputs
@@ -361,6 +368,7 @@ void mapOutputs (unsigned int len)
 	return;
 }
 
+// Sends the Modbus response for each Modbus request
 void sendACK (uint8_t len)
 {
 	uint16_t crc = 0xFFFF;
@@ -426,6 +434,7 @@ void setup () {
 	setUp();
 }
 
+// Reads the Modbus commands from the OBC
 void loop ()
 {
 	if (Serial2.available())

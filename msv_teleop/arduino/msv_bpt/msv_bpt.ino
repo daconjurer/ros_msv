@@ -139,6 +139,7 @@ volatile uint16_t before_start_time[6] = {0};   // Previous time (rising edge in
 volatile uint16_t start_time[6] = {0};          // Current time (next rising edge instant)
 volatile uint16_t period[6] = {0};              // Period of signal
 
+// Generates the CRC for the Modbus responses
 uint16_t ModbusCRC (uint8_t buf, uint16_t crc)
 {
 	// XOR byte to LSB of CRC
@@ -216,12 +217,12 @@ void standby ()
 void initMB ()
 {
 	// Header fill up(input registers response)
-	iregs_response[0] = 0x00;
+	iregs_response[0] = 0x02;
 	iregs_response[1] = 0x03;
 	iregs_response[2] = 0x08;
 	
 	// Whole fill up (holding registers response)
-	hregs_response[0] = 0x00;
+	hregs_response[0] = 0x02;
 	hregs_response[1] = 0x10;
 	hregs_response[2] = 0x00;
 	hregs_response[3] = 0x00;
@@ -229,7 +230,7 @@ void initMB ()
 	hregs_response[5] = 0x04;
 	
 	// Whole fill up (forced coils response)
-	force_coils_response[0] = 0x00;
+	force_coils_response[0] = 0x02;
 	force_coils_response[1] = 0x0F;
 	force_coils_response[2] = 0x00;
 	force_coils_response[3] = 0x00;
@@ -237,7 +238,7 @@ void initMB ()
 	force_coils_response[5] = 0x05;
 	
 	// Header fill up (read coils response)
-	read_coils_response[0] = 0x00;
+	read_coils_response[0] = 0x02;
 	read_coils_response[1] = 0x01;
 	read_coils_response[2] = 0x01;
 	
