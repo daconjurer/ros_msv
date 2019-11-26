@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs message_generation
 add_message_files(FILES Electric.msg Actuators.msg)
 	# other message files to be included here
 	#Message.msg)
+
+# Messages generation
 generate_messages(DEPENDENCIES std_msgs)
 
 ## Declare a catkin package

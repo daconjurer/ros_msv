@@ -44,6 +44,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 /* TODO */
+// Add sensors debug mode when the serial port is not available (using the sendPacketBPT method)
 
 #include <msv_teleop/msv_teleop.h>
 
@@ -70,14 +71,20 @@ MsvTeleop::MsvTeleop (char* const port, const int& baudrate, const int& verb) : 
 	// Port handler
 	if (bpt.openPort()) {
 		ROS_INFO("CONTROLLER BPT SERIAL PORT OPEN. INITIALIZING BPT NOW...");
+	} else {
+		ROS_ERROR("Port not available. The node will not start");
+		while (ros::ok());
+		
+		// Controller debug mode (see TODO)
+		//ROS_INFO("CONTROLLER DEBUG MODE");
 	}
-	else ROS_INFO("CONTROLLER DEBUG MODE");
 	
 	// liblightmodbus Master struct init
 	mec = modbusMasterInit(&master);
-	if (mec != MODBUS_OK)
-		ROS_INFO("MODBUS MASTER COULD NOT BE INITIALIZED");
-	else ROS_INFO("MODBUS MASTER INITIALIZED");
+	if (mec != MODBUS_OK) {
+		ROS_ERROR("MODBUS MASTER COULD NOT BE INITIALIZED");
+		while (ros::ok());
+	} else { ROS_INFO("MODBUS MASTER INITIALIZED");}
 	
 	// Multiarrays set up
 	bpt_read_iregs.layout.dim.push_back(std_msgs::MultiArrayDimension());

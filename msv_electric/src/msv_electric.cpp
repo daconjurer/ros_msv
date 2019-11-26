@@ -49,6 +49,7 @@
 #include <msv_electric/msv_electric.h>
 
 /* TODO */
+// Add sensors debug mode when the serial port is not available (using the sendPacketBPS method)
 
 MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb) : bps(port,baudrate) 
 {
@@ -67,13 +68,20 @@ MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb
 	// Port handler
 	if (bps.openPort()) {
 		ROS_INFO("CONTROLLER BPS SERIAL PORT OPEN. INITIALIZING BPS NOW...");
-	} else ROS_INFO("SENSORS DEBUG MODE");
+	} else {
+		ROS_ERROR("Port not available. The node will not start");
+		while (ros::ok());
+		
+		// Controller debug mode (see TODO)
+		//ROS_INFO("CONTROLLER DEBUG MODE");
+	}
 	
 	// liblightmodbus Master struct init
 	mec = modbusMasterInit(&master);
-	if (mec != MODBUS_OK)
-		ROS_INFO("MODBUS MASTER COULD NOT BE INITIALIZED");
-	else ROS_INFO("MODBUS MASTER INITIALIZED");
+	if (mec != MODBUS_OK) {
+		ROS_ERROR("MODBUS MASTER COULD NOT BE INITIALIZED");
+		while (ros::ok());
+	} else { ROS_INFO("MODBUS MASTER INITIALIZED");}
 	
 	// Verbosity attribute
 	verbosity = verb;
@@ -188,7 +196,7 @@ void MsvElectric::senseMSV ()
 		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
-		modbusBuildRequest04(&master,1,0,11);
+		modbusBuildRequest03(&master,1,0,11);
 		
 		// Send request
 		//sendPacketBPS(1);
@@ -209,7 +217,7 @@ void MsvElectric::senseMSV ()
 		pub_coils.publish(bps_forced_coils);
 		
 		/* Input registers request frame building */
-		modbusBuildRequest04(&master,1,0,11);
+		modbusBuildRequest03(&master,1,0,11);
 		
 		// Send request
 		//sendPacketBPS(0);
