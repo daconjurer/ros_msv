@@ -1,18 +1,18 @@
 ros_msv
 =========
 
-This is a ROS 1 metapackage for controlling the *MSV_01* rescue robot. It provides full usage and monitoring of the electronic stage of the robot from within ROS. The metapackage has eight packages, including a package for *ad-hoc* messages generation and a *bringup* package. The package has been tested on ROS Indigo but compatible with ROS Kinetic as well.
+This is a ROS 1 metapackage for controlling the *MSV_01* rescue robot. It provides full usage and monitoring of the electronic stage of the robot within ROS. The metapackage has eight packages, including a package for *ad-hoc* messages generation and a *bringup* package. The package has been tested on ROS Indigo but compatible with ROS Kinetic as well.
 
 ### Prerequisites
 
-[ROS](http://www.ros.org) Indigo/Kinetic should be installed. The package also uses third party software such as:
+[ROS](http://www.ros.org) Indigo should be installed. The package also uses third party software such as:
 
  - The [liblightmodbus](https://github.com/Jacajack/liblightmodbus) lightweight, cross-platform Modbus library.
- - [HerkulexSDK](https://github.com/daconjurer/HerkulexSDK), a library for controlling the Hovis HerkuleX servo motors (Please see http://www.dstrobot.com/eng/index.jsp).
+ - [HerkulexSDK](https://github.com/daconjurer/), a library for controlling the Hovis HerkuleX servo motors (Please see http://www.dstrobot.com/eng/index.jsp).
 
 ### Installing
 
-Upon downloading the repo directory and placing it in the *src* folder of your *catkin workspace*, on the *catkin workspace* directory run the command
+Upon downloading the repo and placing it in the *src* folder of your *catkin_workspace*, on the *catkin_workspace* directory run the command
 
 ```
 catkin_make

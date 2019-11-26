@@ -129,7 +129,10 @@ int main (int argc, char **argv)
 				return -1;
 			}
 		}
-		else //ROS_ERROR("FAILED TO OPEN THE SERIAL PORT.");
+		else {
+			ROS_ERROR("Port not available. The node will not start");
+			while (ros::ok());
+		}
 		
 		ROS_INFO("READING IMU");
 		while (ros::ok()) {

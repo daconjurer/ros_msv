@@ -33,7 +33,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Victor Esteban Sandoval-Luna */
+/////////////////////////////////////////////////////////////////////////////////////////
+/// @file PortHandler class implementation. This class allow serial port read/write
+/// non-canonical control. It is intended to be used with FTDI USB-to-TTL converters.
+///
+/// @author Victor Esteban Sandoval-Luna
+/////////////////////////////////////////////////////////////////////////////////////////
 
 #include <msv_main/port_handler.h>
 
@@ -107,7 +112,7 @@ char* PortHandler::getPortName ()
 
 int PortHandler::setBaudRate (const int& baudrate)
 {
-	// Considering both Hovis HerkuleX servos limits and TTL hardware limits (up to 500000 bps)
+	// Considering USB-to-TTL hardware limits (up to 500000 bps)
 	int br = -1;
 	
 	switch (baudrate) {
@@ -138,11 +143,10 @@ int PortHandler::setBaudRate (const int& baudrate)
 	}
 	
 	if (br == -1) {
-		std::cout << "Error setting baudrate: Invalid baudrate." << std::endl;
-		return br;
+		std::cout << "Error setting baudrate (Invalid baudrate): Default baudrate 115200 bps." << std::endl;
 	}
 	
-	return baudrate;
+	return br;
 }
 
 int PortHandler::getBytesAvailable ()

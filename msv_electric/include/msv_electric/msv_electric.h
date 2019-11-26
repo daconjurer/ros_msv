@@ -93,6 +93,19 @@ class MsvElectric
 		const int CROSS_BUTTON = 2;
 		const int SQUARE_BUTTON = 3;
 		
+		// Sensors indexes
+		const int I_ARM = 0;
+		const int I_DCM = 1;
+		const int I_BL2 = 2;
+		const int I_BL1 = 3;
+		const int I_OBC = 4;
+		const int I_ES = 5;
+		const int I_DXL = 6;
+		const int P_BAT = 7;
+		const int S_BAT = 8;
+		const int I_LEDS = 9;
+		const int CO2 = 10;
+		
 		std::vector<uint8_t> ack_modbus = std::vector<uint8_t> (1);
 		
 		// Joy node callback
