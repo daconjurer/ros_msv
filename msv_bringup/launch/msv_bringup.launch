@@ -1,0 +1,41 @@
+<launch>
+	
+	<!-- MSV_MAIN & NEW TERMINAL -->
+	<node name="msv_robot" pkg="msv_main" type="msv_robot" output="screen" launch-prefix="gnome-terminal --command"/>
+	
+	<!-- MSV_TELEOP & NEW TERMINAL -->
+	<node name="msv_teleop" pkg="msv_teleop" type="msv_teleop" output="screen" launch-prefix="gnome-terminal --command">
+		<param name="port" value="/dev/ttyUSB0"/>
+		<param name="baudrate" value="115200"/>
+		<param name="verbosity" value="1"/>
+	</node>
+	
+	<!-- MSV_ELECTRIC & NEW TERMINAL -->
+	<node name= "msv_electric" pkg="msv_electric" type="msv_electric" output="screen" launch-prefix="gnome-terminal --command">
+	<param name="port" value="/dev/ttyUSB1"/>
+	<param name="baudrate" value="115200"/>
+	<param name="verbosity" value="1"/>
+	</node>
+	
+	<!-- MSV_IMU & NEW TERMINAL -->
+	<node name= "msv_imu" pkg="msv_imu" type="msv_imu" output="screen" launch-prefix="gnome-terminal --command">
+		<param name="port" value="/dev/ttyUSB2"/>
+		<param name="baudrate" value="115200"/>
+	</node>
+	
+	<!-- MSV_ARM & NEW TERMINAL -->
+	<node name= "msv_arm" pkg="msv_arm" type="msv_arm" output="screen" launch-prefix="gnome-terminal --command">
+		<param name="port" value="/dev/ttyUSB3"/>
+		<param name="baudrate" value="115200"/>
+		<param name="speed" value="0.2"/>
+	</node>
+	
+	<!-- MSV_DXL & NEW TERMINAL -->
+	<node name= "msv_dxl" pkg="msv_dxl" type="msv_dxl" output="screen" launch-prefix="gnome-terminal --command">
+		<param name="port" value="/dev/ttyACM0"/>
+		<param name="baudrate" value="115200"/>
+	</node>
+	
+	<?ignore?>
+	
+</launch>

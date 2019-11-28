@@ -212,7 +212,7 @@ int PortHandler::setInterfaceAttribs (const int& fd, const int& baudrate, const 
 	
 	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
 		std::cout << "Error " << std::strerror(errno) << " from tcsetattr.\n";
-	return -1;
+		return -1;
 	}
 	
 	if (!isatty(fd)) {

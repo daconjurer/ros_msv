@@ -50,6 +50,7 @@
 
 /* TODO */
 // Add sensors debug mode when the serial port is not available (using the sendPacketBPS method)
+// Scale sensors values
 
 MsvElectric::MsvElectric (char* const port, const int& baudrate, const int& verb) : bps(port,baudrate) 
 {
@@ -178,53 +179,30 @@ void MsvElectric::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 
 void MsvElectric::senseMSV ()
 {
-	if (verbosity == 1) {
-		/* Coils request frame building */
-		modbusBuildRequest15(&master,1,7,4,coils.data());
-		//ROS_INFO("BPS COILS QUERY:");
-		//printQuery();
-		
-		// Send request
-		//sendPacketBPS(1);
-		sendreceivePacketBPS(1,8);
-		
-		// Frame publishing
-		bps_forced_coils.data.clear();
-		for (int i = 0; i < master.request.length; i++) {
-			bps_forced_coils.data.push_back(master.request.frame[i]);
-		}
-		pub_coils.publish(bps_forced_coils);
-		
-		/* Input registers request frame building */
-		modbusBuildRequest03(&master,1,0,11);
-		
-		// Send request
-		//sendPacketBPS(1);
-		sendreceivePacketBPS(1,27);
-	} else {
-		/* Coils frame request frame building */
-		modbusBuildRequest15(&master,1,7,4,coils.data());
-		
-		// Send request
-		//sendPacketBPS(0);
-		sendreceivePacketBPS(0,8);
-		
-		// Frame publishing
-		bps_forced_coils.data.clear();
-		for (int i = 0; i < master.request.length; i++) {
-			bps_forced_coils.data.push_back(master.request.frame[i]);
-		}
-		pub_coils.publish(bps_forced_coils);
-		
-		/* Input registers request frame building */
-		modbusBuildRequest03(&master,1,0,11);
-		
-		// Send request
-		//sendPacketBPS(0);
-		sendreceivePacketBPS(0,27);
-	}
+	/* Coils request frame building */
+	modbusBuildRequest15(&master,1,7,4,coils.data());
+	//ROS_INFO("BPS COILS QUERY:");
+	//printQuery();
 	
-	// Frames publishing
+	// Send request
+	//sendPacketBPS(verbosity);
+	sendreceivePacketBPS(verbosity,8);
+	
+	// Frame publishing
+	bps_forced_coils.data.clear();
+	for (int i = 0; i < master.request.length; i++) {
+		bps_forced_coils.data.push_back(master.request.frame[i]);
+	}
+	pub_coils.publish(bps_forced_coils);
+	
+	/* Input registers request frame building */
+	modbusBuildRequest03(&master,1,0,11);
+	
+	// Send request
+	//sendPacketBPS(1);
+	sendreceivePacketBPS(verbosity,27);
+	
+	// Frame publishing
 	bps_read_iregs.data.clear();
 	for (int i = 0; i < master.request.length; i++) {
 		bps_read_iregs.data.push_back(master.request.frame[i]);

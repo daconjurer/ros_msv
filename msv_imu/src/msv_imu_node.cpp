@@ -72,7 +72,8 @@
 #include <ros/ros.h>
 #include <msv_main/port_handler.h>
 #include <boost/asio.hpp>
-#include <std_msgs/UInt8MultiArray.h>
+#include <sensor_msgs/Imu.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
 
 int initIMU (msv::PortHandler& port);
@@ -93,20 +94,25 @@ int main (int argc, char **argv)
 	// Resume flag
 	bool rf = false;
 	
+	sensor_msgs::Imu imu_msg;
+	int data_counter;
+	
 	// Arrays for data processing
-	std::vector<uint8_t> data = std::vector<uint8_t> (28);
-	std_msgs::UInt8MultiArray imu_data;
+	std::vector<uint8_t> data = std::vector<uint8_t> (15);
+	std::vector<uint16_t> imu_raw = std::vector<uint16_t> (12);
+	std::vector<double> imu_values = std::vector<double> (12);
+	std_msgs::Float64MultiArray imu_data;
 	
 	// Multiarray set up
 	imu_data.layout.dim.push_back(std_msgs::MultiArrayDimension());
-	imu_data.layout.dim[0].size = 28;
+	imu_data.layout.dim[0].size = 15;
 	imu_data.layout.dim[0].stride = 1;
 	imu_data.layout.dim[0].label = "imu_raw";
 	
-	ros::Publisher pub_imu = n_imu.advertise<std_msgs::UInt8MultiArray>("msv/imu_raw", 10);
+	ros::Publisher pub_imu = n_imu.advertise<std_msgs::Float64MultiArray>("msv/imu_raw", 10);
 	
 	imu_data.data.clear();
-	for (int i = 0; i < 28; i++) {
+	for (int i = 0; i < 15; i++) {
 		imu_data.data.push_back(0);
 	}
 	
@@ -142,8 +148,12 @@ int main (int argc, char **argv)
 			getIMUData(ph,data);
 				
 			imu_data.data.clear();
-			for (int i = 0; i < 28; i++) {
-				imu_data.data.push_back(data[i]);
+			data_counter = 0;
+			for (int i = 0; i < 6; i++) {
+				imu_raw[i] = (((uint16_t)data[data_counter]) << 8) | (0x00FF & ((uint16_t)data[data_counter+1]));
+				imu_values[i] = imu_raw[i] * (8.0 / 65536.0) * 9.8;
+				imu_data.data.push_back(imu_values[i]);
+				data_counter += 2;
 			}
 			pub_imu.publish(imu_data);
 		} ph.closePort();
@@ -153,7 +163,7 @@ int main (int argc, char **argv)
 	}
 }
 
-int initIMU (msv::PortHandler& port) 
+int initIMU (msv::PortHandler& port)
 {
 	int k, n, c;
 	uint8_t init[1] = {0x10};
@@ -193,7 +203,7 @@ int initIMU (msv::PortHandler& port)
 		return -1;
 	} else ROS_INFO("I2C connection tested succesfully.");
 	
-	init[0] = COM_START;// data[1] = COM_START; data[2] = EOQ;
+	init[0] = COM_START;
 	
 	// Send the communication start query
 	port.clearPort();
@@ -249,7 +259,7 @@ int initIMU (msv::PortHandler& port)
 	return 0;
 }
 
-void getIMUData (msv::PortHandler& port, std::vector<uint8_t>& data) 
+void getIMUData (msv::PortHandler& port, std::vector<uint8_t>& data)
 {
 	int k, n;
 	uint8_t com[1] = {SEND_ARDI_DATA};
@@ -257,18 +267,18 @@ void getIMUData (msv::PortHandler& port, std::vector<uint8_t>& data)
 	// Send the INIT query
 	port.clearPort();
 	k = port.writePort(com,1);
-	usleep ((1 + 28) * 10);
+	usleep ((1 + 15) * 10);
+	
+		// Receive ACK
+	n = port.readPort(data.data(),15);
 	
 	if (k != 1) {
 		ROS_ERROR("Failed to send the COM query to ARDI.");
 		return;
 	}
 	
-	// Receive ACK
-	n = port.readPort(data.data(),28);
-	
 	// Check if ACK is corrupted
-	if (n != 28) {
+	if (n != 15) {
 		ROS_ERROR("ARDI packet is corrupted.");
 		return;
 	}
