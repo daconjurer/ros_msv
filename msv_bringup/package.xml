@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>msv_bringup</name>
+  <version>1.0.0</version>
+  <description>msv_bringup provides roslaunch scripts for starting the MSV_01 robot base functionality.</description>
+
+  <author email="stb.4421@gmail.com">Victor Sandoval-Luna</author>
+  <maintainer email="stb.4421@gmail.com">Victor Sandoval-Luna</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
