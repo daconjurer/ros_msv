@@ -178,7 +178,7 @@ void MsvDxl::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 			sent = sendreceivePacketOCMD(0,OCMD_DATA_LENGTH);
 		}
 		
-		if (sent == -1) {//OCMD_DATA_LENGTH) {
+		if (sent == OCMD_DATA_LENGTH) {
 			int j = 1;
 			uint16_t temp = 0;
 			for (int i = 0; i < NUM_SERVOS; i++) { 

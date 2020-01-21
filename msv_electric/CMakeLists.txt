@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(msv_electric)
 
 ## Find catkin and any catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs)
-find_package(msv_main REQUIRED)
-find_package(msv_msgs REQUIRED)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs msv_main msv_msgs)
 ## Find System dependencies
 find_package(Boost REQUIRED COMPONENTS system)
 
@@ -22,7 +20,7 @@ include_directories(
 catkin_package(
 	INCLUDE_DIRS include
 	LIBRARIES
-	CATKIN_DEPENDS message_runtime roscpp rospy std_msgs
+	CATKIN_DEPENDS roscpp rospy std_msgs
 )
 
 add_executable(msv_electric src/msv_electric.cpp

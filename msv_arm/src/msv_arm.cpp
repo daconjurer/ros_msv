@@ -34,7 +34,7 @@
  *********************************************************************/
 
 /////////////////////////////////////////////////////////////////////////////////////////
-/// @file ROS msv_dxl class of the MSV-01 rescue robot for ROBOTIS OpenCM 9.04
+/// @file ROS msv_arm class of the MSV-01 rescue robot for ROBOTIS OpenCM 9.04
 /// instruction through serial port. This code assumes the OpenCM 9,04 board runs the
 /// DynamixelSDK 3.5.4 or superior for the AX-12A servos instruction.
 ///
@@ -43,6 +43,16 @@
 ///
 /// For further information on the OpenCM 9,04 controller bard,
 /// please see http://emanual.robotis.com/docs/en/parts/controller/opencm904/
+///
+/// The use of the Twist message might be useful in case the inverse kinematics functions
+/// are implemented. Then the linear/angular components of the Twist message could be used
+/// to determining the input position for the inverse kinematics calculation. Note this
+/// would require using a variable for storing the accumulated value every time the robot
+/// moves, as well as setting maximum and minimum values to prevent wrong calculations.
+///
+/// In case only forward kinematics is to be tested/used, the HerkuleXcommands should be
+/// used right after the "MOVING" labels printed by ROS_STREAM. The Twist command is then
+/// not necessary.
 ///
 /// @author Victor Esteban Sandoval-Luna
 ///
@@ -57,9 +67,9 @@ MsvArm::MsvArm (char* const port, const int& baudrate, const int& verb, const in
 	ROS_INFO("SETTING ARM UP...");
 	
 	// Servos position topic
-	pub_angles = n_arm.advertise<std_msgs::Float32>("msv/arm_angles", 1);
-	// End-effector unitary speed direction along each axis
-	pub_effector_vel = n_arm.advertise<geometry_msgs::Twist>("msv/effector_uvel", 1000);
+	pub_angles = n_arm.advertise<std_msgs::Float32MultiArray>("msv/arm_angles", 10);
+	// End-effector speed direction along each axis
+	pub_effector = n_arm.advertise<geometry_msgs::Twist>("msv/effector", 1000);
 	
 	// Servos controller topic
 	sub_joy = n_arm.subscribe("joy", 10, &MsvArm::joyCallback, this);
@@ -73,6 +83,16 @@ MsvArm::MsvArm (char* const port, const int& baudrate, const int& verb, const in
 	
 	power = constrainPower(speed);
 	
+	// Multiarray set up (for publishing the read angles)
+	arm_angles.layout.dim.push_back(std_msgs::MultiArrayDimension());
+	// Number of servos
+	arm_angles.layout.dim[0].size = 1;
+	arm_angles.layout.dim[0].stride = 1;
+	arm_angles.layout.dim[0].label = "arm_angles";
+	
+	// SEtup HerkuleX SDK functions (e.g. echo testing, turning LEDs ON, enabling torque, etc).
+	// setLED(2,5);
+	// torqueOn(5);
 }
 
 // Controller topic callback function
@@ -87,6 +107,7 @@ void MsvArm::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 		if (joy->buttons[up] == 1) {
 			ROS_INFO("MOVING ARM (+z)");
 			twist.linear.z = joy->buttons[up];
+			// moveAngle0201(90,5,1,11.2);
 		}
 		else if (joy->buttons[down] == 1) {
 			ROS_INFO("MOVING ARM (-z)");
@@ -114,7 +135,12 @@ void MsvArm::joyCallback (const sensor_msgs::Joy::ConstPtr& joy)
 		twist.linear.x = power*x;
 		twist.linear.y = power*y;
 		
-		pub_effector_vel.publish(twist);
+		pub_effector.publish(twist);
+		
+		// Feedback routine
+		// angles[0] = getAngle0201(5);
+		// arm_angles.data.push_back(angles[0]);
+		// pub_angles.publish(arm_angles);
 	}
 }
 
@@ -139,5 +165,6 @@ int MsvArm::constrainPower (const int& pwr) {
 
 void MsvArm::close () 
 {
-	// Close DXL port
+	// Close HerkuleX port
+	closeHerkuleX();
 }
