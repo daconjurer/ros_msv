@@ -85,32 +85,3 @@ int main (int argc, char **argv)
 	return 0;
 }
 
-/*
-int main(int argc, char **argv)
-{
-
-  //Initiate ROS
-  ros::init(argc, argv, "msv_arm");
-
-  //Create an object of class msv_arm that will do the job
-  msv_arm *arm;
-  msv_arm hklx(1);
-  arm = &hklx;
-
-  //arm->setPortLabel(port_label);
-  //bool ctrl;
-
-  //ctrl = arm->setLED(2,5);
-
-  //ctrl = arm->torqueOn(5);
-
-  //std::cout << "move 5 angle" << '\n';
-  //bool c = arm->moveAngle0201(90,5,1,11.2);
-  //std::cout << c << std::endl;
-
-  ros::spin();
-
-  return 0;
-}
-*/
-

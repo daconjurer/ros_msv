@@ -77,7 +77,7 @@
 #include <ros/ros.h>
 #include <herkulex_sdk.h>
 #include <unistd.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/UInt16.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/Joy.h>
@@ -90,7 +90,7 @@ class MsvArm: public ServoHerkulex
 	private:
 		ros::NodeHandle n_arm;
 		ros::Publisher pub_angles;
-		ros::Publisher pub_effector_vel;
+		ros::Publisher pub_effector;
 		
 		// For the robotic arm control
 		ros::Subscriber sub_mode;
@@ -100,6 +100,9 @@ class MsvArm: public ServoHerkulex
 		int y, x, z;
 		int up, down;
 		int power;
+		std::vector<float> angles = std::vector<float> (1);
+		
+		std_msgs::Float32MultiArray arm_angles;
 		
 		void joyCallback (const sensor_msgs::Joy::ConstPtr& joy);
 		void modeCallback (const std_msgs::String::ConstPtr& mode);
