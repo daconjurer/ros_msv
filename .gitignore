@@ -1,1 +1,4 @@
 # ignore these files:
+Doxyfile
+html/
+latex/
